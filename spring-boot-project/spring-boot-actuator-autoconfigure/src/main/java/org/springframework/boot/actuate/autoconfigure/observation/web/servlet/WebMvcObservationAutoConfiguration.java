@@ -66,17 +66,8 @@ import org.springframework.web.servlet.DispatcherServlet;
  * @author Jonatan Ivanov
  * @since 3.0.0
  */
-@AutoConfiguration(after = { MetricsAutoConfiguration.class, CompositeMeterRegistryAutoConfiguration.class,
-		SimpleMetricsExportAutoConfiguration.class, ObservationAutoConfiguration.class })
-@ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
-@ConditionalOnClass({ DispatcherServlet.class, Observation.class })
-@ConditionalOnBean(ObservationRegistry.class)
-@EnableConfigurationProperties({ MetricsProperties.class, ObservationProperties.class, ServerProperties.class,
-		WebMvcProperties.class })
 public class WebMvcObservationAutoConfiguration {
 
-	@Bean
-	@ConditionalOnMissingFilterBean
 	public FilterRegistrationBean<ServerHttpObservationFilter> webMvcObservationFilter(ObservationRegistry registry,
 			ObjectProvider<ServerRequestObservationConvention> customConvention,
 			ObservationProperties observationProperties) {
@@ -90,13 +81,8 @@ public class WebMvcObservationAutoConfiguration {
 		return registration;
 	}
 
-	@Configuration(proxyBeanMethods = false)
-	@ConditionalOnClass(MeterRegistry.class)
-	@ConditionalOnBean(MeterRegistry.class)
 	static class MeterFilterConfiguration {
 
-		@Bean
-		@Order(0)
 		MeterFilter metricsHttpServerUriTagFilter(ObservationProperties observationProperties,
 				MetricsProperties metricsProperties) {
 			String name = observationProperties.getHttp().getServer().getRequests().getName();
@@ -108,8 +94,6 @@ public class WebMvcObservationAutoConfiguration {
 
 	}
 
-	@Configuration(proxyBeanMethods = false)
-	@ConditionalOnProperty(value = "management.observations.http.server.actuator.enabled", havingValue = "false")
 	static class ActuatorWebEndpointObservationConfiguration {
 
 		@Bean

@@ -61,13 +61,6 @@ import org.springframework.web.filter.reactive.ServerHttpObservationFilter;
  * @author Jonatan Ivanov
  * @since 3.0.0
  */
-@AutoConfiguration(after = { MetricsAutoConfiguration.class, CompositeMeterRegistryAutoConfiguration.class,
-		SimpleMetricsExportAutoConfiguration.class, ObservationAutoConfiguration.class })
-@ConditionalOnClass(Observation.class)
-@ConditionalOnBean(ObservationRegistry.class)
-@ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
-@EnableConfigurationProperties({ MetricsProperties.class, ObservationProperties.class })
-@SuppressWarnings("removal")
 public class WebFluxObservationAutoConfiguration {
 
 	private final ObservationProperties observationProperties;
@@ -76,9 +69,6 @@ public class WebFluxObservationAutoConfiguration {
 		this.observationProperties = observationProperties;
 	}
 
-	@Bean
-	@ConditionalOnMissingBean(ServerHttpObservationFilter.class)
-	@Order(Ordered.HIGHEST_PRECEDENCE + 1)
 	public ServerHttpObservationFilter webfluxObservationFilter(ObservationRegistry registry,
 			ObjectProvider<ServerRequestObservationConvention> customConvention) {
 		String name = this.observationProperties.getHttp().getServer().getRequests().getName();
@@ -87,13 +77,8 @@ public class WebFluxObservationAutoConfiguration {
 		return new ServerHttpObservationFilter(registry, convention);
 	}
 
-	@Configuration(proxyBeanMethods = false)
-	@ConditionalOnClass(MeterRegistry.class)
-	@ConditionalOnBean(MeterRegistry.class)
 	static class MeterFilterConfiguration {
 
-		@Bean
-		@Order(0)
 		MeterFilter metricsHttpServerUriTagFilter(MetricsProperties metricsProperties,
 				ObservationProperties observationProperties) {
 			String name = observationProperties.getHttp().getServer().getRequests().getName();
@@ -105,11 +90,8 @@ public class WebFluxObservationAutoConfiguration {
 
 	}
 
-	@Configuration(proxyBeanMethods = false)
-	@ConditionalOnProperty(value = "management.observations.http.server.actuator.enabled", havingValue = "false")
 	static class ActuatorWebEndpointObservationConfiguration {
 
-		@Bean
 		ObservationPredicate actuatorWebEndpointObservationPredicate(WebFluxProperties webFluxProperties,
 				PathMappedEndpoints pathMappedEndpoints) {
 			return (name, context) -> {
