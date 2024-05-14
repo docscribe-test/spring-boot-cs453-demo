@@ -69,6 +69,12 @@ public class WebFluxObservationAutoConfiguration {
 		this.observationProperties = observationProperties;
 	}
 
+	/**
+	 * Creates a filter for observing server HTTP requests in a WebFlux application.
+	 * @param registry The observation registry to store observations.
+	 * @param customConvention The custom convention for server request observations.
+	 * @return The server HTTP observation filter.
+	 */
 	public ServerHttpObservationFilter webfluxObservationFilter(ObservationRegistry registry, ObjectProvider customConvention) {
 		String name = this.observationProperties.getHttp().getServer().getRequests().getName();
 		ServerRequestObservationConvention convention = customConvention
@@ -76,6 +82,12 @@ public class WebFluxObservationAutoConfiguration {
 		return new ServerHttpObservationFilter(registry, convention);
 	}
 
+	/**
+	 * Creates a filter for handling URI tags in HTTP server metrics.
+	 * @param metricsProperties The metrics properties configuration.
+	 * @param observationProperties The observation properties configuration.
+	 * @return The meter filter for URI tags.
+	 */
 	public MeterFilter metricsHttpServerUriTagFilter(MetricsProperties metricsProperties, ObservationProperties observationProperties) {
 		String name = observationProperties.getHttp().getServer().getRequests().getName();
 		MeterFilter filter = new OnlyOnceLoggingDenyMeterFilter(
@@ -94,6 +106,12 @@ public class WebFluxObservationAutoConfiguration {
 				filter);
 	}
 
+	/**
+	 * Creates a predicate for observing web endpoints in an actuator application.
+	 * @param webFluxProperties The WebFlux properties configuration.
+	 * @param pathMappedEndpoints The path mapped endpoints.
+	 * @return The observation predicate for web endpoints.
+	 */
 	public ObservationPredicate actuatorWebEndpointObservationPredicate(WebFluxProperties webFluxProperties, PathMappedEndpoints pathMappedEndpoints) {
 		return (name, context) -> {
 			if (context instanceof ServerRequestObservationContext serverContext) {
