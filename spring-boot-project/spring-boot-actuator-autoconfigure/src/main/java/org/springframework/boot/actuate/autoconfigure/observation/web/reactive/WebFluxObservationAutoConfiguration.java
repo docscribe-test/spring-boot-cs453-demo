@@ -77,6 +77,9 @@ public class WebFluxObservationAutoConfiguration {
 		return new ServerHttpObservationFilter(registry, convention);
 	}
 
+	/**
+	 * Configuration class for defining MeterFilters for metrics related to HTTP server URIs.
+	 */
 	static class MeterFilterConfiguration {
 
 		MeterFilter metricsHttpServerUriTagFilter(MetricsProperties metricsProperties,
@@ -90,6 +93,9 @@ public class WebFluxObservationAutoConfiguration {
 
 	}
 
+	/**
+	 * Configuration class for defining ObservationPredicates for actuator web endpoints.
+	 */
 	static class ActuatorWebEndpointObservationConfiguration {
 
 		ObservationPredicate actuatorWebEndpointObservationPredicate(WebFluxProperties webFluxProperties,

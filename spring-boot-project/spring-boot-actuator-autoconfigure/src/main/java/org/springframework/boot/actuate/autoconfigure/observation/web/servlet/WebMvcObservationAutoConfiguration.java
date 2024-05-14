@@ -81,6 +81,9 @@ public class WebMvcObservationAutoConfiguration {
 		return registration;
 	}
 
+	/**
+	 * Configuration class for defining meter filters.
+	 */
 	static class MeterFilterConfiguration {
 
 		MeterFilter metricsHttpServerUriTagFilter(ObservationProperties observationProperties,
@@ -94,6 +97,9 @@ public class WebMvcObservationAutoConfiguration {
 
 	}
 
+	/**
+	 * Configuration class for defining actuator web endpoint observation.
+	 */
 	static class ActuatorWebEndpointObservationConfiguration {
 
 		@Bean
