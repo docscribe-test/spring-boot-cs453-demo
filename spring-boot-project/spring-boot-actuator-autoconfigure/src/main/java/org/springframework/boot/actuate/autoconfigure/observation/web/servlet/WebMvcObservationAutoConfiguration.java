@@ -68,6 +68,14 @@ import org.springframework.web.servlet.DispatcherServlet;
  */
 public class WebMvcObservationAutoConfiguration {
 
+	/**
+	 * Filter registration bean for ServerHttpObservationFilter.
+	 *
+	 * @param registry The observation registry.
+	 * @param customConvention The custom observation convention.
+	 * @param observationProperties The observation properties.
+	 * @return The filter registration bean.
+	 */
 	public FilterRegistrationBean<ServerHttpObservationFilter> webMvcObservationFilter(ObservationRegistry registry, ObjectProvider customConvention, ObservationProperties observationProperties) {
 		String name = observationProperties.getHttp().getServer().getRequests().getName();
 		ServerRequestObservationConvention convention = customConvention
@@ -79,6 +87,13 @@ public class WebMvcObservationAutoConfiguration {
 		return registration;
 	}
 
+	/**
+	 * Meter filter for HTTP server URI tag.
+	 *
+	 * @param observationProperties The observation properties.
+	 * @param metricsProperties The metrics properties.
+	 * @return The meter filter.
+	 */
 	public MeterFilter metricsHttpServerUriTagFilter(ObservationProperties observationProperties, MetricsProperties metricsProperties) {
 		String name = observationProperties.getHttp().getServer().getRequests().getName();
 		MeterFilter filter = new OnlyOnceLoggingDenyMeterFilter(
@@ -87,6 +102,14 @@ public class WebMvcObservationAutoConfiguration {
 				filter);
 	}
 
+	/**
+	 * Actuator web endpoint observation predicate.
+	 *
+	 * @param serverProperties The server properties.
+	 * @param webMvcProperties The WebMvc properties.
+	 * @param pathMappedEndpoints The path mapped endpoints.
+	 * @return The observation predicate.
+	 */
 	public ObservationPredicate actuatorWebEndpointObservationPredicate(ServerProperties serverProperties, WebMvcProperties webMvcProperties, PathMappedEndpoints pathMappedEndpoints) {
 		return (name, context) -> {
 			if (context instanceof ServerRequestObservationContext serverContext) {
