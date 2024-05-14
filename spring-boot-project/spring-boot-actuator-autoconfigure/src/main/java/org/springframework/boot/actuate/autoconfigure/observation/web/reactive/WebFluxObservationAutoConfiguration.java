@@ -69,16 +69,14 @@ public class WebFluxObservationAutoConfiguration {
 		this.observationProperties = observationProperties;
 	}
 
-	public ServerHttpObservationFilter webfluxObservationFilter(ObservationRegistry registry,
-			ObjectProvider<ServerRequestObservationConvention> customConvention) {
+	public ServerHttpObservationFilter webfluxObservationFilter(ObservationRegistry registry, ObjectProvider customConvention) {
 		String name = this.observationProperties.getHttp().getServer().getRequests().getName();
 		ServerRequestObservationConvention convention = customConvention
 				.getIfAvailable(() -> new DefaultServerRequestObservationConvention(name));
 		return new ServerHttpObservationFilter(registry, convention);
 	}
 
-	public MeterFilter metricsHttpServerUriTagFilter(MetricsProperties metricsProperties,
-			ObservationProperties observationProperties) {
+	public MeterFilter metricsHttpServerUriTagFilter(MetricsProperties metricsProperties, ObservationProperties observationProperties) {
 		String name = observationProperties.getHttp().getServer().getRequests().getName();
 		MeterFilter filter = new OnlyOnceLoggingDenyMeterFilter(
 				() -> "Reached the maximum number of URI tags for '%s'.".formatted(name));
@@ -86,8 +84,7 @@ public class WebFluxObservationAutoConfiguration {
 				filter);
 	}
 
-	public ObservationPredicate actuatorWebEndpointObservationPredicate(WebFluxProperties webFluxProperties,
-			PathMappedEndpoints pathMappedEndpoints) {
+	public ObservationPredicate actuatorWebEndpointObservationPredicate(WebFluxProperties webFluxProperties, PathMappedEndpoints pathMappedEndpoints) {
 		return (name, context) -> {
 			if (context instanceof ServerRequestObservationContext serverContext) {
 				String endpointPath = getEndpointPath(webFluxProperties, pathMappedEndpoints);
@@ -98,8 +95,7 @@ public class WebFluxObservationAutoConfiguration {
 
 	}
 
-	private static String getEndpointPath(WebFluxProperties webFluxProperties,
-			PathMappedEndpoints pathMappedEndpoints) {
+	private static String getEndpointPath(WebFluxProperties webFluxProperties, PathMappedEndpoints pathMappedEndpoints) {
 		String webFluxBasePath = getWebFluxBasePath(webFluxProperties);
 		return Path.of(webFluxBasePath, pathMappedEndpoints.getBasePath()).toString();
 	}

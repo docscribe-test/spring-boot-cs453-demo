@@ -68,9 +68,7 @@ import org.springframework.web.servlet.DispatcherServlet;
  */
 public class WebMvcObservationAutoConfiguration {
 
-	public FilterRegistrationBean<ServerHttpObservationFilter> webMvcObservationFilter(ObservationRegistry registry,
-			ObjectProvider<ServerRequestObservationConvention> customConvention,
-			ObservationProperties observationProperties) {
+	public FilterRegistrationBean<ServerHttpObservationFilter> webMvcObservationFilter(ObservationRegistry registry, ObjectProvider customConvention, ObservationProperties observationProperties) {
 		String name = observationProperties.getHttp().getServer().getRequests().getName();
 		ServerRequestObservationConvention convention = customConvention
 				.getIfAvailable(() -> new DefaultServerRequestObservationConvention(name));
@@ -81,8 +79,7 @@ public class WebMvcObservationAutoConfiguration {
 		return registration;
 	}
 
-	public MeterFilter metricsHttpServerUriTagFilter(ObservationProperties observationProperties,
-			MetricsProperties metricsProperties) {
+	public MeterFilter metricsHttpServerUriTagFilter(ObservationProperties observationProperties, MetricsProperties metricsProperties) {
 		String name = observationProperties.getHttp().getServer().getRequests().getName();
 		MeterFilter filter = new OnlyOnceLoggingDenyMeterFilter(
 				() -> String.format("Reached the maximum number of URI tags for '%s'.", name));
@@ -90,8 +87,7 @@ public class WebMvcObservationAutoConfiguration {
 				filter);
 	}
 
-	public ObservationPredicate actuatorWebEndpointObservationPredicate(ServerProperties serverProperties,
-			WebMvcProperties webMvcProperties, PathMappedEndpoints pathMappedEndpoints) {
+	public ObservationPredicate actuatorWebEndpointObservationPredicate(ServerProperties serverProperties, WebMvcProperties webMvcProperties, PathMappedEndpoints pathMappedEndpoints) {
 		return (name, context) -> {
 			if (context instanceof ServerRequestObservationContext serverContext) {
 				String endpointPath = getEndpointPath(serverProperties, webMvcProperties, pathMappedEndpoints);
@@ -101,8 +97,7 @@ public class WebMvcObservationAutoConfiguration {
 		};
 	}
 
-	private static String getEndpointPath(ServerProperties serverProperties, WebMvcProperties webMvcProperties,
-			PathMappedEndpoints pathMappedEndpoints) {
+	private static String getEndpointPath(ServerProperties serverProperties, WebMvcProperties webMvcProperties, PathMappedEndpoints pathMappedEndpoints) {
 		String contextPath = getContextPath(serverProperties);
 		String servletPath = getServletPath(webMvcProperties);
 		return Path.of(contextPath, servletPath, pathMappedEndpoints.getBasePath()).toString();
