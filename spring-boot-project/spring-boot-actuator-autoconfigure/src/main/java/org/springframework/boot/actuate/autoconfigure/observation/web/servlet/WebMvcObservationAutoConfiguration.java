@@ -71,6 +71,13 @@ public class WebMvcObservationAutoConfiguration {
 	@Configuration(proxyBeanMethods = false)
 	@ConditionalOnClass(MeterRegistry.class)
 	@ConditionalOnBean(MeterRegistry.class)
+	/**
+	* Auto-configuration for instrumentation of Spring Web MVC servlet-based request mappings.
+	* @param registry The observation registry.
+	* @param customConvention The custom server request observation convention.
+	* @param observationProperties The observation properties.
+	* @return The filter registration bean for ServerHttpObservationFilter.
+	*/
 	public FilterRegistrationBean<ServerHttpObservationFilter> webMvcObservationFilter(ObservationRegistry registry, ObjectProvider customConvention, ObservationProperties observationProperties) {
 		String name = observationProperties.getHttp().getServer().getRequests().getName();
 		ServerRequestObservationConvention convention = customConvention
@@ -85,6 +92,12 @@ public class WebMvcObservationAutoConfiguration {
 	@Configuration(proxyBeanMethods = false)
 	@ConditionalOnClass(MeterRegistry.class)
 	@ConditionalOnBean(MeterRegistry.class)
+	/**
+	* Auto-configuration for metrics HTTP server URI tag filter.
+	* @param observationProperties The observation properties.
+	* @param metricsProperties The metrics properties.
+	* @return The meter filter for HTTP server URI tag.
+	*/
 	public MeterFilter metricsHttpServerUriTagFilter(ObservationProperties observationProperties, MetricsProperties metricsProperties) {
 		String name = observationProperties.getHttp().getServer().getRequests().getName();
 		MeterFilter filter = new OnlyOnceLoggingDenyMeterFilter(
@@ -93,6 +106,13 @@ public class WebMvcObservationAutoConfiguration {
 				filter);
 	}
 
+	/**
+	* Provides the observation predicate for actuator web endpoint observation.
+	* @param serverProperties The server properties.
+	* @param webMvcProperties The WebMVC properties.
+	* @param pathMappedEndpoints The path mapped endpoints.
+	* @return The observation predicate for actuator web endpoint.
+	*/
 	public ObservationPredicate actuatorWebEndpointObservationPredicate(ServerProperties serverProperties, WebMvcProperties webMvcProperties, PathMappedEndpoints pathMappedEndpoints) {
 		return (name, context) -> {
 			if (context instanceof ServerRequestObservationContext serverContext) {
