@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,6 @@ import org.springframework.beans.factory.HierarchicalBeanFactory;
 import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
-import org.springframework.beans.factory.config.SingletonBeanRegistry;
 import org.springframework.boot.autoconfigure.AutoConfigurationMetadata;
 import org.springframework.boot.autoconfigure.condition.ConditionMessage.Style;
 import org.springframework.context.annotation.Bean;
@@ -280,7 +279,7 @@ class OnBeanCondition extends FilteringSpringBootCondition implements Configurat
 
 	private Set<String> collectBeanNamesForAnnotation(ListableBeanFactory beanFactory,
 			Class<? extends Annotation> annotationType, boolean considerHierarchy, Set<String> result) {
-		result = addAll(result, getBeanNamesForAnnotation(beanFactory, annotationType));
+		result = addAll(result, beanFactory.getBeanNamesForAnnotation(annotationType));
 		if (considerHierarchy) {
 			BeanFactory parent = ((HierarchicalBeanFactory) beanFactory).getParentBeanFactory();
 			if (parent instanceof ListableBeanFactory listableBeanFactory) {
@@ -288,30 +287,6 @@ class OnBeanCondition extends FilteringSpringBootCondition implements Configurat
 			}
 		}
 		return result;
-	}
-
-	private String[] getBeanNamesForAnnotation(ListableBeanFactory beanFactory,
-			Class<? extends Annotation> annotationType) {
-		Set<String> foundBeanNames = new LinkedHashSet<>();
-		for (String beanName : beanFactory.getBeanDefinitionNames()) {
-			if (beanFactory instanceof ConfigurableListableBeanFactory configurableListableBeanFactory) {
-				BeanDefinition beanDefinition = configurableListableBeanFactory.getBeanDefinition(beanName);
-				if (beanDefinition != null && beanDefinition.isAbstract()) {
-					continue;
-				}
-			}
-			if (beanFactory.findAnnotationOnBean(beanName, annotationType, false) != null) {
-				foundBeanNames.add(beanName);
-			}
-		}
-		if (beanFactory instanceof SingletonBeanRegistry singletonBeanRegistry) {
-			for (String beanName : singletonBeanRegistry.getSingletonNames()) {
-				if (beanFactory.findAnnotationOnBean(beanName, annotationType) != null) {
-					foundBeanNames.add(beanName);
-				}
-			}
-		}
-		return foundBeanNames.toArray(String[]::new);
 	}
 
 	private boolean containsBean(ConfigurableListableBeanFactory beanFactory, String beanName,
@@ -332,7 +307,7 @@ class OnBeanCondition extends FilteringSpringBootCondition implements Configurat
 
 	private void appendMessageForNoMatches(StringBuilder reason, Collection<String> unmatched, String description) {
 		if (!unmatched.isEmpty()) {
-			if (!reason.isEmpty()) {
+			if (reason.length() > 0) {
 				reason.append(" and ");
 			}
 			reason.append("did not find any beans ");
@@ -347,7 +322,7 @@ class OnBeanCondition extends FilteringSpringBootCondition implements Configurat
 		appendMessageForMatches(reason, matchResult.getMatchedAnnotations(), "annotated with");
 		appendMessageForMatches(reason, matchResult.getMatchedTypes(), "of type");
 		if (!matchResult.getMatchedNames().isEmpty()) {
-			if (!reason.isEmpty()) {
+			if (reason.length() > 0) {
 				reason.append(" and ");
 			}
 			reason.append("found beans named ");
@@ -360,7 +335,7 @@ class OnBeanCondition extends FilteringSpringBootCondition implements Configurat
 			String description) {
 		if (!matches.isEmpty()) {
 			matches.forEach((key, value) -> {
-				if (!reason.isEmpty()) {
+				if (reason.length() > 0) {
 					reason.append(" and ");
 				}
 				reason.append("found beans ");
@@ -500,7 +475,6 @@ class OnBeanCondition extends FilteringSpringBootCondition implements Configurat
 					resolved.add(resolve(className, this.classLoader));
 				}
 				catch (ClassNotFoundException | NoClassDefFoundError ex) {
-					// Ignore
 				}
 			}
 			return resolved;

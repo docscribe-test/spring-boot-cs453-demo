@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ import ch.qos.logback.core.encoder.LayoutWrappingEncoder;
 import ch.qos.logback.core.rolling.RollingFileAppender;
 import ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy;
 import ch.qos.logback.core.util.DynamicClassLoadingException;
+import ch.qos.logback.core.util.StatusPrinter;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -120,7 +121,7 @@ class LogbackLoggingSystemTests extends AbstractLoggingSystemTests {
 		ConversionService conversionService = ApplicationConversionService.getSharedInstance();
 		this.environment.setConversionService((ConfigurableConversionService) conversionService);
 		this.initializationContext = new LoggingInitializationContext(this.environment);
-		this.loggingSystem.setStatusPrinterStream(System.out);
+		StatusPrinter.setPrintStream(System.out);
 	}
 
 	@AfterEach
@@ -587,7 +588,7 @@ class LogbackLoggingSystemTests extends AbstractLoggingSystemTests {
 		initialize(loggingInitializationContext, null, null);
 		this.logger.info("Hello world");
 		assertThat(getLineWithText(output, "Hello world"))
-			.containsPattern("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}([-+]\\d{2}:\\d{2}|Z)");
+			.containsPattern("\\d{4}-\\d{2}\\-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}([-+]\\d{2}:\\d{2}|Z)");
 	}
 
 	@Test
@@ -760,7 +761,7 @@ class LogbackLoggingSystemTests extends AbstractLoggingSystemTests {
 	}
 
 	@Test
-	void applicationNameLoggingToConsoleWhenHasApplicationName(CapturedOutput output) {
+	void applicationNameLoggingWhenHasApplicationName(CapturedOutput output) {
 		this.environment.setProperty("spring.application.name", "myapp");
 		initialize(this.initializationContext, null, null);
 		this.logger.info("Hello world");
@@ -768,51 +769,12 @@ class LogbackLoggingSystemTests extends AbstractLoggingSystemTests {
 	}
 
 	@Test
-	void applicationNameLoggingToConsoleWhenHasApplicationNameWithParenthesis(CapturedOutput output) {
-		this.environment.setProperty("spring.application.name", "myapp (dev)");
-		initialize(this.initializationContext, null, null);
-		this.logger.info("Hello world");
-		assertThat(getLineWithText(output, "Hello world")).contains("[myapp (dev)] ");
-	}
-
-	@Test
-	void applicationNameLoggingToConsoleWhenDisabled(CapturedOutput output) {
+	void applicationNameLoggingWhenDisabled(CapturedOutput output) {
 		this.environment.setProperty("spring.application.name", "myapp");
 		this.environment.setProperty("logging.include-application-name", "false");
 		initialize(this.initializationContext, null, null);
 		this.logger.info("Hello world");
-		assertThat(getLineWithText(output, "Hello world")).doesNotContain("myapp").doesNotContain("null");
-	}
-
-	@Test
-	void applicationNameLoggingToFileWhenHasApplicationName() {
-		this.environment.setProperty("spring.application.name", "myapp");
-		File file = new File(tmpDir(), "logback-test.log");
-		LogFile logFile = getLogFile(file.getPath(), null);
-		initialize(this.initializationContext, null, logFile);
-		this.logger.info("Hello world");
-		assertThat(getLineWithText(file, "Hello world")).contains("[myapp] ");
-	}
-
-	@Test
-	void applicationNameLoggingToFileWhenHasApplicationNameWithParenthesis() {
-		this.environment.setProperty("spring.application.name", "myapp (dev)");
-		File file = new File(tmpDir(), "logback-test.log");
-		LogFile logFile = getLogFile(file.getPath(), null);
-		initialize(this.initializationContext, null, logFile);
-		this.logger.info("Hello world");
-		assertThat(getLineWithText(file, "Hello world")).contains("[myapp (dev)] ");
-	}
-
-	@Test
-	void applicationNameLoggingToFileWhenDisabled(CapturedOutput output) {
-		this.environment.setProperty("spring.application.name", "myapp");
-		this.environment.setProperty("logging.include-application-name", "false");
-		File file = new File(tmpDir(), "logback-test.log");
-		LogFile logFile = getLogFile(file.getPath(), null);
-		initialize(this.initializationContext, null, logFile);
-		this.logger.info("Hello world");
-		assertThat(getLineWithText(file, "Hello world")).doesNotContain("myapp").doesNotContain("null");
+		assertThat(getLineWithText(output, "Hello world")).doesNotContain("myapp");
 	}
 
 	@Test
@@ -874,14 +836,6 @@ class LogbackLoggingSystemTests extends AbstractLoggingSystemTests {
 			.addFirst(new MapPropertySource("test", Map.of("logging.pattern.console", "[CONSOLE]%m")));
 		this.loggingSystem.initialize(this.initializationContext, "classpath:logback-nondefault.xml", null);
 		assertThat(output).doesNotContain("WARN");
-	}
-
-	@Test
-	void shouldNotContainAnsiEscapeCodes(CapturedOutput output) {
-		this.loggingSystem.beforeInitialize();
-		initialize(this.initializationContext, null, null);
-		this.logger.info("Hello world");
-		assertThat(output).doesNotContain("\033[");
 	}
 
 	private void initialize(LoggingInitializationContext context, String configLocation, LogFile logFile) {

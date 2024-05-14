@@ -140,11 +140,7 @@ public class PropertiesLauncher extends Launcher {
 	private final Properties properties = new Properties();
 
 	public PropertiesLauncher() throws Exception {
-		this(Archive.create(Launcher.class));
-	}
-
-	PropertiesLauncher(Archive archive) throws Exception {
-		this.archive = archive;
+		this.archive = Archive.create(Launcher.class);
 		this.homeDirectory = getHomeDirectory();
 		initializeProperties();
 		this.paths = getPaths();
@@ -468,8 +464,6 @@ public class PropertiesLauncher extends Launcher {
 			path = cleanupPath(handleUrl(path));
 			urls.addAll(getClassPathUrlsForPath(path));
 		}
-		urls.addAll(getClassPathUrlsForRoot());
-		debug.log("Using class path URLs %s", urls);
 		return urls;
 	}
 
@@ -535,11 +529,6 @@ public class PropertiesLauncher extends Launcher {
 				archive.close();
 			}
 		}
-	}
-
-	private Set<URL> getClassPathUrlsForRoot() throws IOException {
-		debug.log("Adding classpath entries from root archive %s", this.archive);
-		return this.archive.getClassPathUrls(JarLauncher::isLibraryFileOrClassesDirectory);
 	}
 
 	private Predicate<Entry> includeByPrefix(String prefix) {

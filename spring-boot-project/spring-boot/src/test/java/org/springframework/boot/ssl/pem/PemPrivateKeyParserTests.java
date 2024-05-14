@@ -30,6 +30,7 @@ import org.springframework.core.io.ClassPathResource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Tests for {@link PemPrivateKeyParser}.
@@ -75,9 +76,12 @@ class PemPrivateKeyParserTests {
 	})
 		// @formatter:on
 	void shouldNotParseUnsupportedTraditionalPkcs1(String file) {
-		assertThatIllegalStateException()
-			.isThrownBy(() -> PemPrivateKeyParser.parse(read("org/springframework/boot/web/server/pkcs1/" + file)))
-			.withMessageContaining("Missing private key or unrecognized format");
+		assertThatThrownBy(() -> PemPrivateKeyParser.parse(read("org/springframework/boot/web/server/pkcs1/" + file)))
+			.isInstanceOf(IllegalStateException.class)
+			.hasMessageContaining("Error loading private key file")
+			.hasCauseInstanceOf(IllegalStateException.class)
+			.cause()
+			.hasMessageContaining("Unrecognized private key format");
 	}
 
 	@ParameterizedTest
@@ -115,9 +119,12 @@ class PemPrivateKeyParserTests {
 	})
 		// @formatter:on
 	void shouldNotParseUnsupportedEcPkcs8(String file) {
-		assertThatIllegalStateException()
-			.isThrownBy(() -> PemPrivateKeyParser.parse(read("org/springframework/boot/web/server/pkcs8/" + file)))
-			.withMessageContaining("Missing private key or unrecognized format");
+		assertThatThrownBy(() -> PemPrivateKeyParser.parse(read("org/springframework/boot/web/server/pkcs8/" + file)))
+			.isInstanceOf(IllegalStateException.class)
+			.hasMessageContaining("Error loading private key file")
+			.hasCauseInstanceOf(IllegalStateException.class)
+			.cause()
+			.hasMessageContaining("Unrecognized private key format");
 	}
 
 	@ParameterizedTest
@@ -183,9 +190,12 @@ class PemPrivateKeyParserTests {
 	})
 		// @formatter:on
 	void shouldNotParseUnsupportedEcSec1(String file) {
-		assertThatIllegalStateException()
-			.isThrownBy(() -> PemPrivateKeyParser.parse(read("org/springframework/boot/web/server/sec1/" + file)))
-			.withMessageContaining("Missing private key or unrecognized format");
+		assertThatThrownBy(() -> PemPrivateKeyParser.parse(read("org/springframework/boot/web/server/sec1/" + file)))
+			.isInstanceOf(IllegalStateException.class)
+			.hasMessageContaining("Error loading private key file")
+			.hasCauseInstanceOf(IllegalStateException.class)
+			.cause()
+			.hasMessageContaining("Unrecognized private key format");
 	}
 
 	@Test
@@ -246,17 +256,17 @@ class PemPrivateKeyParserTests {
 		assertThatIllegalStateException()
 			.isThrownBy(() -> PemPrivateKeyParser
 				.parse(read("org/springframework/boot/web/server/sec1/prime256v1-aes-128-cbc.key"), "test"))
-			.withMessageContaining("Missing private key or unrecognized format");
+			.withMessageContaining("Unrecognized private key format");
 	}
 
 	@Test
-	void shouldNotParseEncryptedPkcs1() {
+	void shouldNotParseEncryptedPkcs1() throws Exception {
 		// created with:
 		// openssl genrsa -aes-256-cbc -out rsa-aes-256-cbc.key
 		assertThatIllegalStateException()
 			.isThrownBy(() -> PemPrivateKeyParser
 				.parse(read("org/springframework/boot/web/server/pkcs1/rsa-aes-256-cbc.key"), "test"))
-			.withMessageContaining("Missing private key or unrecognized format");
+			.withMessageContaining("Unrecognized private key format");
 	}
 
 	private String read(String path) throws IOException {

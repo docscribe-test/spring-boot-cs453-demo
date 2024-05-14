@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,8 +37,6 @@ import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
-import org.springframework.mock.web.MockServletContext;
-import org.springframework.util.ClassUtils;
 import org.springframework.web.context.WebApplicationContext;
 
 /**
@@ -51,9 +49,6 @@ import org.springframework.web.context.WebApplicationContext;
  */
 class ServletComponentRegisteringPostProcessor
 		implements BeanFactoryPostProcessor, ApplicationContextAware, BeanFactoryInitializationAotProcessor {
-
-	private static final boolean MOCK_SERVLET_CONTEXT_AVAILABLE = ClassUtils
-		.isPresent("org.springframework.mock.web.MockServletContext", null);
 
 	private static final List<ServletComponentHandler> HANDLERS;
 
@@ -75,7 +70,7 @@ class ServletComponentRegisteringPostProcessor
 
 	@Override
 	public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
-		if (eligibleForServletComponentScanning()) {
+		if (isRunningInEmbeddedWebServer()) {
 			ClassPathScanningCandidateComponentProvider componentProvider = createComponentProvider();
 			for (String packageToScan : this.packagesToScan) {
 				scanPackage(componentProvider, packageToScan);
@@ -93,10 +88,9 @@ class ServletComponentRegisteringPostProcessor
 		}
 	}
 
-	private boolean eligibleForServletComponentScanning() {
+	private boolean isRunningInEmbeddedWebServer() {
 		return this.applicationContext instanceof WebApplicationContext webApplicationContext
-				&& (webApplicationContext.getServletContext() == null || (MOCK_SERVLET_CONTEXT_AVAILABLE
-						&& webApplicationContext.getServletContext() instanceof MockServletContext));
+				&& webApplicationContext.getServletContext() == null;
 	}
 
 	private ClassPathScanningCandidateComponentProvider createComponentProvider() {

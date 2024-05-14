@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -119,7 +119,9 @@ public class ResetMocksTestExecutionListener extends AbstractTestExecutionListen
 		String factoryBeanName = BeanFactory.FACTORY_BEAN_PREFIX + name;
 		if (beanFactory.containsBean(factoryBeanName)) {
 			FactoryBean<?> factoryBean = (FactoryBean<?>) beanFactory.getBean(factoryBeanName);
-			return factoryBean.isSingleton();
+			if (!factoryBean.isSingleton()) {
+				return false;
+			}
 		}
 		return true;
 	}

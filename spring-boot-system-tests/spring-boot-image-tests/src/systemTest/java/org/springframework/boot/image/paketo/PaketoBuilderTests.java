@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,7 +73,6 @@ class PaketoBuilderTests {
 		this.gradleBuild.scriptPropertyFrom(new File("../../gradle.properties"), "nativeBuildToolsVersion");
 		this.gradleBuild.expectDeprecationMessages("BPL_SPRING_CLOUD_BINDINGS_ENABLED.*true.*Deprecated");
 		this.gradleBuild.expectDeprecationMessages("BOM table is deprecated");
-		this.gradleBuild.expectDeprecationMessages("Command \"packages\" is deprecated, use `syft scan` instead");
 		this.gradleBuild.gradleVersion(GradleVersions.maximumCompatible());
 	}
 
@@ -300,6 +299,7 @@ class PaketoBuilderTests {
 	}
 
 	@Test
+	@EnabledForJreRange(max = JRE.JAVA_17)
 	void nativeApp() throws Exception {
 		this.gradleBuild.expectDeprecationMessages("uses or overrides a deprecated API");
 		this.gradleBuild.expectDeprecationMessages("has been deprecated and marked for removal");
@@ -475,9 +475,11 @@ class PaketoBuilderTests {
 		if (javaVersion.startsWith("1.")) {
 			return javaVersion.substring(2, 3);
 		}
-		int firstDotIndex = javaVersion.indexOf(".");
-		if (firstDotIndex != -1) {
-			return javaVersion.substring(0, firstDotIndex);
+		else {
+			int firstDotIndex = javaVersion.indexOf(".");
+			if (firstDotIndex != -1) {
+				return javaVersion.substring(0, firstDotIndex);
+			}
 		}
 		return javaVersion;
 	}

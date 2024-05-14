@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Tests for {@link SingleRow}.
  *
  * @author Brian Clozel
- * @author Moritz Halbritter
  */
 class SingleRowTests {
 
@@ -39,7 +38,7 @@ class SingleRowTests {
 		SingleRow row = new SingleRow(SNIPPET, property);
 		Asciidoc asciidoc = new Asciidoc();
 		row.write(asciidoc);
-		assertThat(asciidoc).hasToString("|[[my.spring.test.prop]]xref:#my.spring.test.prop[`+spring.test.prop+`]"
+		assertThat(asciidoc).hasToString("|[[my.spring.test.prop]]<<my.spring.test.prop,`+spring.test.prop+`>>"
 				+ NEWLINE + "|+++This is a description.+++" + NEWLINE + "|`+something+`" + NEWLINE);
 	}
 
@@ -50,7 +49,7 @@ class SingleRowTests {
 		SingleRow row = new SingleRow(SNIPPET, property);
 		Asciidoc asciidoc = new Asciidoc();
 		row.write(asciidoc);
-		assertThat(asciidoc).hasToString("|[[my.spring.test.prop]]xref:#my.spring.test.prop[`+spring.test.prop+`]"
+		assertThat(asciidoc).hasToString("|[[my.spring.test.prop]]<<my.spring.test.prop,`+spring.test.prop+`>>"
 				+ NEWLINE + "|+++This is a description.+++" + NEWLINE + "|" + NEWLINE);
 	}
 
@@ -61,7 +60,7 @@ class SingleRowTests {
 		SingleRow row = new SingleRow(SNIPPET, property);
 		Asciidoc asciidoc = new Asciidoc();
 		row.write(asciidoc);
-		assertThat(asciidoc).hasToString("|[[my.spring.test.prop]]xref:#my.spring.test.prop[`+spring.test.prop+`]"
+		assertThat(asciidoc).hasToString("|[[my.spring.test.prop]]<<my.spring.test.prop,`+spring.test.prop+`>>"
 				+ NEWLINE + "|+++This is a description.+++" + NEWLINE + "|`+first\\|second+`" + NEWLINE);
 	}
 
@@ -72,7 +71,7 @@ class SingleRowTests {
 		SingleRow row = new SingleRow(SNIPPET, property);
 		Asciidoc asciidoc = new Asciidoc();
 		row.write(asciidoc);
-		assertThat(asciidoc).hasToString("|[[my.spring.test.prop]]xref:#my.spring.test.prop[`+spring.test.prop+`]"
+		assertThat(asciidoc).hasToString("|[[my.spring.test.prop]]<<my.spring.test.prop,`+spring.test.prop+`>>"
 				+ NEWLINE + "|+++This is a description.+++" + NEWLINE + "|`+first\\\\second+`" + NEWLINE);
 	}
 
@@ -83,7 +82,7 @@ class SingleRowTests {
 		SingleRow row = new SingleRow(SNIPPET, property);
 		Asciidoc asciidoc = new Asciidoc();
 		row.write(asciidoc);
-		assertThat(asciidoc).hasToString("|[[my.spring.test.prop]]xref:#my.spring.test.prop[`+spring.test.prop+`]"
+		assertThat(asciidoc).hasToString("|[[my.spring.test.prop]]<<my.spring.test.prop,`+spring.test.prop+`>>"
 				+ NEWLINE + "|+++This is a description with a \\| pipe.+++" + NEWLINE + "|" + NEWLINE);
 	}
 
@@ -94,7 +93,7 @@ class SingleRowTests {
 		SingleRow row = new SingleRow(SNIPPET, property);
 		Asciidoc asciidoc = new Asciidoc();
 		row.write(asciidoc);
-		assertThat(asciidoc).hasToString("|[[my.spring.test.prop]]xref:#my.spring.test.prop[`+spring.test.prop.*+`]"
+		assertThat(asciidoc).hasToString("|[[my.spring.test.prop]]<<my.spring.test.prop,`+spring.test.prop.*+`>>"
 				+ NEWLINE + "|+++This is a description.+++" + NEWLINE + "|" + NEWLINE);
 	}
 
@@ -106,7 +105,7 @@ class SingleRowTests {
 		SingleRow row = new SingleRow(SNIPPET, property);
 		Asciidoc asciidoc = new Asciidoc();
 		row.write(asciidoc);
-		assertThat(asciidoc).hasToString("|[[my.spring.test.prop]]xref:#my.spring.test.prop[`+spring.test.prop+`]"
+		assertThat(asciidoc).hasToString("|[[my.spring.test.prop]]<<my.spring.test.prop,`+spring.test.prop+`>>"
 				+ NEWLINE + "|+++This is a description.+++" + NEWLINE + "|`+first," + NEWLINE + "second," + NEWLINE
 				+ "third+`" + NEWLINE);
 	}

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,10 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.time.Duration;
 import java.util.ArrayDeque;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,7 +59,6 @@ import org.springframework.boot.configurationprocessor.metadata.ItemMetadata;
  * @author Kris De Volder
  * @author Jonas Keßler
  * @author Scott Frederick
- * @author Moritz Halbritter
  * @since 1.2.0
  */
 @SupportedAnnotationTypes({ ConfigurationMetadataAnnotationProcessor.AUTO_CONFIGURATION_ANNOTATION,
@@ -102,7 +104,8 @@ public class ConfigurationMetadataAnnotationProcessor extends AbstractProcessor 
 
 	static final String AUTO_CONFIGURATION_ANNOTATION = "org.springframework.boot.autoconfigure.AutoConfiguration";
 
-	private static final Set<String> SUPPORTED_OPTIONS = Set.of(ADDITIONAL_METADATA_LOCATIONS_OPTION);
+	private static final Set<String> SUPPORTED_OPTIONS = Collections
+		.unmodifiableSet(Collections.singleton(ADDITIONAL_METADATA_LOCATIONS_OPTION));
 
 	private MetadataStore metadataStore;
 
@@ -135,8 +138,8 @@ public class ConfigurationMetadataAnnotationProcessor extends AbstractProcessor 
 	}
 
 	protected Set<String> endpointAnnotations() {
-		return Set.of(CONTROLLER_ENDPOINT_ANNOTATION, ENDPOINT_ANNOTATION, JMX_ENDPOINT_ANNOTATION,
-				REST_CONTROLLER_ENDPOINT_ANNOTATION, SERVLET_ENDPOINT_ANNOTATION, WEB_ENDPOINT_ANNOTATION);
+		return new HashSet<>(Arrays.asList(CONTROLLER_ENDPOINT_ANNOTATION, ENDPOINT_ANNOTATION, JMX_ENDPOINT_ANNOTATION,
+				REST_CONTROLLER_ENDPOINT_ANNOTATION, SERVLET_ENDPOINT_ANNOTATION, WEB_ENDPOINT_ANNOTATION));
 	}
 
 	protected String readOperationAnnotation() {
@@ -289,26 +292,15 @@ public class ConfigurationMetadataAnnotationProcessor extends AbstractProcessor 
 			return; // Can't process that endpoint
 		}
 		String endpointKey = ItemMetadata.newItemMetadataPrefix("management.endpoint.", endpointId);
-		boolean enabledByDefault = (boolean) elementValues.getOrDefault("enableByDefault", true);
+		Boolean enabledByDefault = (Boolean) elementValues.get("enableByDefault");
 		String type = this.metadataEnv.getTypeUtils().getQualifiedName(element);
-		this.metadataCollector.addIfAbsent(ItemMetadata.newGroup(endpointKey, type, type, null));
-		this.metadataCollector.add(
-				ItemMetadata.newProperty(endpointKey, "enabled", Boolean.class.getName(), type, null,
-						"Whether to enable the %s endpoint.".formatted(endpointId), enabledByDefault, null),
-				(existing) -> checkEnabledValueMatchesExisting(existing, enabledByDefault, type));
+		this.metadataCollector.add(ItemMetadata.newGroup(endpointKey, type, type, null));
+		this.metadataCollector.add(ItemMetadata.newProperty(endpointKey, "enabled", Boolean.class.getName(), type, null,
+				String.format("Whether to enable the %s endpoint.", endpointId),
+				(enabledByDefault != null) ? enabledByDefault : true, null));
 		if (hasMainReadOperation(element)) {
-			this.metadataCollector.addIfAbsent(ItemMetadata.newProperty(endpointKey, "cache.time-to-live",
+			this.metadataCollector.add(ItemMetadata.newProperty(endpointKey, "cache.time-to-live",
 					Duration.class.getName(), type, null, "Maximum time that a response can be cached.", "0ms", null));
-		}
-	}
-
-	private void checkEnabledValueMatchesExisting(ItemMetadata existing, boolean enabledByDefault, String sourceType) {
-		boolean existingDefaultValue = (boolean) existing.getDefaultValue();
-		if (enabledByDefault != existingDefaultValue) {
-			throw new IllegalStateException(
-					"Existing property '%s' from type %s has a conflicting value. Existing value: %b, new value from type %s: %b"
-						.formatted(existing.getName(), existing.getSourceType(), existingDefaultValue, sourceType,
-								enabledByDefault));
 		}
 	}
 

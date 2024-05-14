@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.springframework.boot.actuate.autoconfigure.metrics.export.prometheus;
 
+import io.micrometer.prometheus.PrometheusConfig;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -30,19 +31,9 @@ class PrometheusPropertiesTests {
 	@Test
 	void defaultValuesAreConsistent() {
 		PrometheusProperties properties = new PrometheusProperties();
-		io.micrometer.prometheusmetrics.PrometheusConfig config = io.micrometer.prometheusmetrics.PrometheusConfig.DEFAULT;
+		PrometheusConfig config = PrometheusConfig.DEFAULT;
 		assertThat(properties.isDescriptions()).isEqualTo(config.descriptions());
-		assertThat(properties.getStep()).isEqualTo(config.step());
-	}
-
-	@SuppressWarnings("deprecation")
-	@Test
-	void defaultValuesAreConsistentWithSimpleclient() {
-		PrometheusProperties properties = new PrometheusProperties();
-		io.micrometer.prometheus.PrometheusConfig config = io.micrometer.prometheus.PrometheusConfig.DEFAULT;
-		assertThat(properties.isDescriptions()).isEqualTo(config.descriptions());
-		assertThat(PrometheusSimpleclientPropertiesConfigAdapter.mapToMicrometerHistogramFlavor(properties))
-			.isEqualTo(config.histogramFlavor());
+		assertThat(properties.getHistogramFlavor()).isEqualTo(config.histogramFlavor());
 		assertThat(properties.getStep()).isEqualTo(config.step());
 	}
 

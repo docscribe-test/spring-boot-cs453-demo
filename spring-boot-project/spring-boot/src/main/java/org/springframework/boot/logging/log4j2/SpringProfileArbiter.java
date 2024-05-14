@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,7 +53,7 @@ final class SpringProfileArbiter implements Arbiter {
 
 	@Override
 	public boolean isCondition() {
-		return (this.environment != null) && this.environment.acceptsProfiles(this.profiles);
+		return (this.environment != null) ? this.environment.acceptsProfiles(this.profiles) : false;
 	}
 
 	@PluginBuilderFactory
@@ -95,7 +95,8 @@ final class SpringProfileArbiter implements Arbiter {
 		public SpringProfileArbiter build() {
 			Environment environment = Log4J2LoggingSystem.getEnvironment(this.loggerContext);
 			if (environment == null) {
-				statusLogger.debug("Creating Arbiter without a Spring Environment");
+				statusLogger.warn("Cannot create Arbiter, no Spring Environment available");
+				return null;
 			}
 			String name = this.configuration.getStrSubstitutor().replace(this.name);
 			String[] profiles = StringUtils.trimArrayElements(StringUtils.commaDelimitedListToStringArray(name));

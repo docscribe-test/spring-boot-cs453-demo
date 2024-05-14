@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,14 @@
 
 package org.springframework.boot.actuate.metrics.export.prometheus;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.util.Enumeration;
 import java.util.Set;
 
-import io.prometheus.metrics.model.registry.PrometheusRegistry;
-import io.prometheus.metrics.model.snapshots.MetricSnapshots;
+import io.prometheus.client.Collector.MetricFamilySamples;
+import io.prometheus.client.CollectorRegistry;
 
 import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
 import org.springframework.boot.actuate.endpoint.annotation.ReadOperation;
@@ -35,7 +37,6 @@ import org.springframework.lang.Nullable;
  *
  * @author Jon Schneider
  * @author Johnny Lim
- * @author Moritz Halbritter
  * @since 2.0.0
  */
 @WebEndpoint(id = "prometheus")
@@ -43,26 +44,30 @@ public class PrometheusScrapeEndpoint {
 
 	private static final int METRICS_SCRAPE_CHARS_EXTRA = 1024;
 
-	private final PrometheusRegistry prometheusRegistry;
+	private final CollectorRegistry collectorRegistry;
 
 	private volatile int nextMetricsScrapeSize = 16;
 
-	public PrometheusScrapeEndpoint(PrometheusRegistry prometheusRegistry) {
-		this.prometheusRegistry = prometheusRegistry;
+	public PrometheusScrapeEndpoint(CollectorRegistry collectorRegistry) {
+		this.collectorRegistry = collectorRegistry;
 	}
 
-	@ReadOperation(producesFrom = PrometheusOutputFormat.class)
-	public WebEndpointResponse<byte[]> scrape(PrometheusOutputFormat format, @Nullable Set<String> includedNames) {
+	@ReadOperation(producesFrom = TextOutputFormat.class)
+	public WebEndpointResponse<String> scrape(TextOutputFormat format, @Nullable Set<String> includedNames) {
 		try {
-			ByteArrayOutputStream outputStream = new ByteArrayOutputStream(this.nextMetricsScrapeSize);
-			MetricSnapshots metricSnapshots = (includedNames != null)
-					? this.prometheusRegistry.scrape(includedNames::contains) : this.prometheusRegistry.scrape();
-			format.write(outputStream, metricSnapshots);
-			byte[] content = outputStream.toByteArray();
-			this.nextMetricsScrapeSize = content.length + METRICS_SCRAPE_CHARS_EXTRA;
-			return new WebEndpointResponse<>(content, format);
+			Writer writer = new StringWriter(this.nextMetricsScrapeSize);
+			Enumeration<MetricFamilySamples> samples = (includedNames != null)
+					? this.collectorRegistry.filteredMetricFamilySamples(includedNames)
+					: this.collectorRegistry.metricFamilySamples();
+			format.write(writer, samples);
+
+			String scrapePage = writer.toString();
+			this.nextMetricsScrapeSize = scrapePage.length() + METRICS_SCRAPE_CHARS_EXTRA;
+
+			return new WebEndpointResponse<>(scrapePage, format);
 		}
 		catch (IOException ex) {
+			// This actually never happens since StringWriter doesn't throw an IOException
 			throw new IllegalStateException("Writing metrics failed", ex);
 		}
 	}

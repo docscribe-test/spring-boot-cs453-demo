@@ -32,11 +32,13 @@ class MyHealthMetricsExportConfiguration(registry: MeterRegistry, healthEndpoint
 		}.strongReference(true).register(registry)
 	}
 
-	private fun getStatusCode(health: HealthEndpoint) = when (health.health().status) {
-		Status.UP -> 3
-		Status.OUT_OF_SERVICE -> 2
-		Status.DOWN -> 1
-		else -> 0
+	private fun getStatusCode(health: HealthEndpoint): Int {
+    	return when (health.health().status) {
+        	Status.UP -> 3
+        	Status.OUT_OF_SERVICE -> 2
+        	Status.DOWN -> 1
+        	else -> 0
+    	}
 	}
 
 }

@@ -287,9 +287,9 @@ class RedisAutoConfigurationJedisTests {
 	void shouldUseVirtualThreadsIfEnabled() {
 		this.contextRunner.withPropertyValues("spring.threads.virtual.enabled=true").run((context) -> {
 			JedisConnectionFactory factory = context.getBean(JedisConnectionFactory.class);
-			assertThat(factory).extracting("executor")
-				.satisfies((executor) -> SimpleAsyncTaskExecutorAssert.assertThat((SimpleAsyncTaskExecutor) executor)
-					.usesVirtualThreads());
+			SimpleAsyncTaskExecutor executor = (SimpleAsyncTaskExecutor) ReflectionTestUtils.getField(factory,
+					"executor");
+			SimpleAsyncTaskExecutorAssert.assertThat(executor).usesVirtualThreads();
 		});
 	}
 

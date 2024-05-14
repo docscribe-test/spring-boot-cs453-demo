@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,6 +67,7 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.servlet.DispatcherServlet;
 
@@ -111,7 +112,6 @@ public class CloudFoundryActuatorAutoConfiguration {
 	}
 
 	@Bean
-	@SuppressWarnings("removal")
 	public CloudFoundryWebEndpointServletHandlerMapping cloudFoundryWebEndpointServletHandlerMapping(
 			ParameterValueMapper parameterMapper, EndpointMediaTypes endpointMediaTypes,
 			RestTemplateBuilder restTemplateBuilder, ServletEndpointsSupplier servletEndpointsSupplier,
@@ -125,8 +125,8 @@ public class CloudFoundryActuatorAutoConfiguration {
 		allEndpoints.addAll(webEndpoints);
 		allEndpoints.addAll(servletEndpointsSupplier.getEndpoints());
 		allEndpoints.addAll(controllerEndpointsSupplier.getEndpoints());
-		return new CloudFoundryWebEndpointServletHandlerMapping(new EndpointMapping(BASE_PATH), webEndpoints,
-				endpointMediaTypes, getCorsConfiguration(), securityInterceptor, allEndpoints);
+		return new CloudFoundryWebEndpointServletHandlerMapping(new EndpointMapping("/cloudfoundryapplication"),
+				webEndpoints, endpointMediaTypes, getCorsConfiguration(), securityInterceptor, allEndpoints);
 	}
 
 	private CloudFoundrySecurityInterceptor getSecurityInterceptor(RestTemplateBuilder restTemplateBuilder,
@@ -189,7 +189,9 @@ public class CloudFoundryActuatorAutoConfiguration {
 				.forEach((path) -> requestMatchers.add(new AntPathRequestMatcher(path + "/**")));
 			requestMatchers.add(new AntPathRequestMatcher(BASE_PATH));
 			requestMatchers.add(new AntPathRequestMatcher(BASE_PATH + "/"));
-			web.ignoring().requestMatchers(new OrRequestMatcher(requestMatchers));
+			if (!CollectionUtils.isEmpty(requestMatchers)) {
+				web.ignoring().requestMatchers(new OrRequestMatcher(requestMatchers));
+			}
 		}
 
 	}

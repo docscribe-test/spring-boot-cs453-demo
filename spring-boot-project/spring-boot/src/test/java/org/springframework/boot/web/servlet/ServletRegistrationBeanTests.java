@@ -24,7 +24,6 @@ import java.util.Map;
 
 import jakarta.servlet.Servlet;
 import jakarta.servlet.ServletContext;
-import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRegistration;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,7 +33,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.boot.web.servlet.mock.MockServlet;
 
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
-import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
@@ -69,16 +68,14 @@ class ServletRegistrationBeanTests {
 
 	@Test
 	void failsWithDoubleRegistration() {
-		assertThatIllegalStateException().isThrownBy(() -> doubleRegistration())
-			.withMessage("Failed to register 'servlet double-registration' on "
-					+ "the servlet context. Possibly already registered?");
-	}
-
-	private void doubleRegistration() throws ServletException {
-		ServletRegistrationBean<MockServlet> bean = new ServletRegistrationBean<>(this.servlet);
-		bean.setName("double-registration");
-		given(this.servletContext.addServlet(anyString(), any(Servlet.class))).willReturn(null);
-		bean.onStartup(this.servletContext);
+		assertThatThrownBy(() -> {
+			ServletRegistrationBean<MockServlet> bean = new ServletRegistrationBean<>(this.servlet);
+			bean.setName("double-registration");
+			given(this.servletContext.addServlet(anyString(), any(Servlet.class))).willReturn(null);
+			bean.onStartup(this.servletContext);
+		}).isInstanceOf(IllegalStateException.class)
+			.hasMessage(
+					"Failed to register 'servlet double-registration' on the servlet context. Possibly already registered?");
 	}
 
 	@Test

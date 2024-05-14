@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,12 +22,12 @@ import java.util.concurrent.Executor;
 import graphql.GraphQL;
 import graphql.execution.instrumentation.ChainedInstrumentation;
 import graphql.execution.instrumentation.Instrumentation;
-import graphql.introspection.Introspection;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.RuntimeWiring;
 import graphql.schema.visibility.DefaultGraphqlFieldVisibility;
+import graphql.schema.visibility.NoIntrospectionGraphqlFieldVisibility;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -126,9 +126,7 @@ class GraphQlAutoConfigurationTests {
 			assertThat(graphQL.getQueryStrategy()).extracting("dataFetcherExceptionHandler")
 				.satisfies((exceptionHandler) -> {
 					assertThat(exceptionHandler.getClass().getName()).endsWith("ExceptionResolversExceptionHandler");
-					assertThat(exceptionHandler).extracting("resolvers")
-						.asInstanceOf(InstanceOfAssertFactories.LIST)
-						.hasSize(2);
+					assertThat(exceptionHandler).extracting("resolvers").asList().hasSize(2);
 				});
 		});
 	}
@@ -183,7 +181,8 @@ class GraphQlAutoConfigurationTests {
 		this.contextRunner.withPropertyValues("spring.graphql.schema.introspection.enabled:false").run((context) -> {
 			GraphQlSource graphQlSource = context.getBean(GraphQlSource.class);
 			GraphQLSchema schema = graphQlSource.schema();
-			assertThat(Introspection.isEnabledJvmWide()).isFalse();
+			assertThat(schema.getCodeRegistry().getFieldVisibility())
+				.isInstanceOf(NoIntrospectionGraphqlFieldVisibility.class);
 		});
 	}
 
@@ -215,7 +214,7 @@ class GraphQlAutoConfigurationTests {
 			GraphQlSource graphQlSource = context.getBean(GraphQlSource.class);
 			GraphQLSchema schema = graphQlSource.schema();
 			GraphQLOutputType bookConnection = schema.getQueryType().getField("books").getType();
-			assertThat(bookConnection).isInstanceOf(GraphQLObjectType.class);
+			assertThat(bookConnection).isNotNull().isInstanceOf(GraphQLObjectType.class);
 			assertThat((GraphQLObjectType) bookConnection)
 				.satisfies((connection) -> assertThat(connection.getFieldDefinition("edges")).isNotNull());
 		});

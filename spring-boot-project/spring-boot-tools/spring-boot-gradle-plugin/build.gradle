@@ -1,7 +1,7 @@
 plugins {
 	id "java-gradle-plugin"
 	id "maven-publish"
-	id "org.antora"
+	id "org.asciidoctor.jvm.convert"
 	id "org.springframework.boot.conventions"
 	id "org.springframework.boot.maven-repository"
 	id "org.springframework.boot.optional-dependencies"
@@ -10,39 +10,12 @@ plugins {
 description = "Spring Boot Gradle Plugins"
 
 configurations {
-	antoraContent
+	documentation
 	"testCompileClasspath" {
 		// Downgrade SLF4J is required for tests to run in Eclipse
 		resolutionStrategy.force("org.slf4j:slf4j-api:1.7.36")
 	}
-	modernGradleRuntimeClasspath {
-		extendsFrom runtimeClasspath
-		canBeConsumed = false
-		canBeResolved = true
-	}
-	modernGradleRuntimeElements {
-		extendsFrom configurations.implementation, configurations.runtimeOnly
-		canBeConsumed = true
-		canBeResolved = false
-		attributes {
-			attribute(Category.CATEGORY_ATTRIBUTE, project.objects.named(Category, Category.LIBRARY))
-			attribute(Bundling.BUNDLING_ATTRIBUTE, project.objects.named(Bundling, Bundling.EXTERNAL))
-			attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, 17)
-			attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, project.objects.named(LibraryElements, LibraryElements.JAR))
-			attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage, Usage.JAVA_RUNTIME))
-			attribute(GradlePluginApiVersion.GRADLE_PLUGIN_API_VERSION_ATTRIBUTE, project.objects.named(GradlePluginApiVersion, "8.7"))
-		}
-		outgoing.artifacts.addAll(configurations.runtimeElements.outgoing.artifacts)
-	}
-	runtimeElements {
-		attributes {
-			attribute(GradlePluginApiVersion.GRADLE_PLUGIN_API_VERSION_ATTRIBUTE, project.objects.named(GradlePluginApiVersion, "7.5"))
-		}
-	}
-	all { configuration ->
-		if (configuration.name == 'modernGradleRuntimeClasspath') {
-			return
-		}
+	all {
 		resolutionStrategy {
 			eachDependency { dependency ->
 				// Downgrade Jackson as Gradle cannot cope with 2.15.0's multi-version
@@ -60,11 +33,9 @@ configurations {
 	}
 }
 
-components.java.addVariantsFromConfiguration(configurations.modernGradleRuntimeElements) {
-	mapToMavenScope("runtime")
-}
-
 dependencies {
+	asciidoctorExtensions("io.spring.asciidoctor:spring-asciidoctor-extensions-section-ids")
+
 	implementation(project(":spring-boot-project:spring-boot-tools:spring-boot-buildpack-platform"))
 	implementation(project(":spring-boot-project:spring-boot-tools:spring-boot-loader-tools"))
 	implementation("io.spring.gradle:dependency-management-plugin")
@@ -72,9 +43,6 @@ dependencies {
 	implementation("org.springframework:spring-core")
 
 	optional("org.graalvm.buildtools:native-gradle-plugin")
-	optional("org.cyclonedx:cyclonedx-gradle-plugin") {
-		exclude(group: "org.apache.maven", module: "maven-core")
-	}
 	optional("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion") {
 		exclude(group: "commons-logging", module: "commons-logging")
 	}
@@ -87,14 +55,6 @@ dependencies {
 	testImplementation("org.mockito:mockito-core")
 	testImplementation("org.testcontainers:junit-jupiter")
 	testImplementation("org.testcontainers:testcontainers")
-}
-
-repositories {
-	gradlePluginPortal() {
-		content {
-			includeGroup("org.cyclonedx")
-		}
-	}
 }
 
 gradlePlugin {
@@ -126,8 +86,36 @@ validatePlugins {
 	enableStricterValidation = true
 }
 
+task dependencyVersions(type: org.springframework.boot.build.constraints.ExtractVersionConstraints) {
+	enforcedPlatform(":spring-boot-project:spring-boot-dependencies")
+}
+
+tasks.withType(org.asciidoctor.gradle.jvm.AbstractAsciidoctorTask) {
+	dependsOn dependencyVersions
+	inputs.dir('src/docs/gradle').withPathSensitivity(PathSensitivity.RELATIVE).withPropertyName('buildScripts')
+	doFirst {
+		attributes "dependency-management-plugin-version": dependencyVersions.versionConstraints["io.spring.gradle:dependency-management-plugin"]
+	}
+}
+
 tasks.named('test') {
-	inputs.dir('src/docs/antora/modules/gradle-plugin/examples').withPathSensitivity(PathSensitivity.RELATIVE).withPropertyName('buildScripts')
+	inputs.dir('src/docs/gradle').withPathSensitivity(PathSensitivity.RELATIVE).withPropertyName('buildScripts')
+}
+
+asciidoctor {
+	sources {
+		include "index.adoc"
+	}
+}
+
+task asciidoctorPdf(type: org.asciidoctor.gradle.jvm.AsciidoctorTask) {
+	sources {
+		include "index.adoc"
+	}
+}
+
+tasks.withType(org.asciidoctor.gradle.jvm.AbstractAsciidoctorTask) {
+	attributes "native-build-tools-version": nativeBuildToolsVersion
 }
 
 javadoc {
@@ -145,51 +133,25 @@ javadoc {
 	}
 }
 
-def antoraGradlePluginLocalAggregateContent  = tasks.register("antoraGradlePluginLocalAggregateContent", Zip) {
-	destinationDirectory = layout.buildDirectory.dir('generated/docs/antora-content')
-	archiveClassifier = "gradle-plugin-local-aggregate-content"
-	from(tasks.getByName("generateAntoraYml")) {
-		into "modules"
+task zip(type: Zip) {
+	dependsOn asciidoctor, asciidoctorPdf
+	duplicatesStrategy "fail"
+	from(asciidoctorPdf.outputDir) {
+		into "reference/pdf"
+		rename "index.pdf", "${project.name}-reference.pdf"
 	}
-}
-
-def antoraGradlePluginCatalogContent = tasks.register("antoraGradlePluginCatalogContent", Zip) {
-	destinationDirectory = layout.buildDirectory.dir('generated/docs/antora-content')
-	archiveClassifier = "gradle-plugin-catalog-content"
+	from(asciidoctor.outputDir) {
+		into "reference/htmlsingle"
+	}
 	from(javadoc) {
-		into "api/java"
+		into "api"
 	}
-}
-
-tasks.named("generateAntoraPlaybook") {
-	xrefStubs = ["appendix:.*", "api:.*", "reference:.*"]
-	alwaysInclude = [name: "gradle-plugin", classifier: "local-aggregate-content"]
-	dependsOn antoraGradlePluginLocalAggregateContent
-}
-
-tasks.named("antora") {
-	inputs.files(antoraGradlePluginLocalAggregateContent, antoraGradlePluginCatalogContent)
 }
 
 artifacts {
-	antoraContent antoraGradlePluginCatalogContent
+	"documentation" zip
 }
 
 toolchain {
 	maximumCompatibleJavaVersion = JavaLanguageVersion.of(20)
-}
-
-publishing {
-	publications.matching { it.name == 'pluginMaven' }.configureEach {
-		versionMapping {
-			allVariants {
-				fromResolutionOf(JavaPlugin.RUNTIME_CLASSPATH_CONFIGURATION_NAME)
-			}
-		}
-		versionMapping {
-			variant(GradlePluginApiVersion.GRADLE_PLUGIN_API_VERSION_ATTRIBUTE, project.objects.named(GradlePluginApiVersion, "8.7")) {
-				fromResolutionOf("modernGradleRuntimeClasspath")
-			}
-		}
-	}
 }

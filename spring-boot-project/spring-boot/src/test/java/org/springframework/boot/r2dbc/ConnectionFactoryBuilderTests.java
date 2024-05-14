@@ -333,7 +333,7 @@ class ConnectionFactoryBuilderTests {
 
 	}
 
-	private static final class MyConnectionFactory implements ConnectionFactory {
+	private static class MyConnectionFactory implements ConnectionFactory {
 
 		@Override
 		public Publisher<? extends Connection> create() {

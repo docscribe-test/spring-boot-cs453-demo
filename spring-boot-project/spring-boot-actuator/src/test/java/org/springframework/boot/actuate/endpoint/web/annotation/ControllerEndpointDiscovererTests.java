@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import org.springframework.boot.actuate.endpoint.EndpointId;
 import org.springframework.boot.actuate.endpoint.annotation.DiscoveredEndpoint;
 import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
 import org.springframework.boot.actuate.endpoint.annotation.ReadOperation;
+import org.springframework.boot.actuate.endpoint.web.annotation.ControllerEndpointDiscoverer.ControllerEndpointDiscovererRuntimeHints;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.autoconfigure.validation.ValidationAutoConfiguration;
 import org.springframework.boot.test.context.assertj.AssertableApplicationContext;
@@ -49,7 +50,6 @@ import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
  * @author Stephane Nicoll
  * @author Moritz Halbritter
  */
-@SuppressWarnings("removal")
 class ControllerEndpointDiscovererTests {
 
 	private final ApplicationContextRunner contextRunner = new ApplicationContextRunner();
@@ -132,8 +132,7 @@ class ControllerEndpointDiscovererTests {
 	@Test
 	void shouldRegisterHints() {
 		RuntimeHints runtimeHints = new RuntimeHints();
-		new ControllerEndpointDiscoverer.ControllerEndpointDiscovererRuntimeHints().registerHints(runtimeHints,
-				getClass().getClassLoader());
+		new ControllerEndpointDiscovererRuntimeHints().registerHints(runtimeHints, getClass().getClassLoader());
 		assertThat(RuntimeHintsPredicates.reflection()
 			.onType(ControllerEndpointFilter.class)
 			.withMemberCategories(MemberCategory.INVOKE_DECLARED_CONSTRUCTORS)).accepts(runtimeHints);

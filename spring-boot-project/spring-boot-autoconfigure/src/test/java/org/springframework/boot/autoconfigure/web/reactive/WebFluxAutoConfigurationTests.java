@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,8 +39,6 @@ import org.aspectj.lang.annotation.Aspect;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledForJreRange;
-import org.junit.jupiter.api.condition.JRE;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -111,11 +109,8 @@ import org.springframework.web.server.i18n.AcceptHeaderLocaleContextResolver;
 import org.springframework.web.server.i18n.FixedLocaleContextResolver;
 import org.springframework.web.server.i18n.LocaleContextResolver;
 import org.springframework.web.server.session.CookieWebSessionIdResolver;
-import org.springframework.web.server.session.DefaultWebSessionManager;
-import org.springframework.web.server.session.InMemoryWebSessionStore;
 import org.springframework.web.server.session.WebSessionIdResolver;
 import org.springframework.web.server.session.WebSessionManager;
-import org.springframework.web.server.session.WebSessionStore;
 import org.springframework.web.util.pattern.PathPattern;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -203,9 +198,7 @@ class WebFluxAutoConfigurationTests {
 			SimpleUrlHandlerMapping hm = context.getBean("resourceHandlerMapping", SimpleUrlHandlerMapping.class);
 			assertThat(hm.getUrlMap().get("/static/**")).isInstanceOf(ResourceWebHandler.class);
 			ResourceWebHandler staticHandler = (ResourceWebHandler) hm.getUrlMap().get("/static/**");
-			assertThat(staticHandler).extracting("locationValues")
-				.asInstanceOf(InstanceOfAssertFactories.LIST)
-				.hasSize(4);
+			assertThat(staticHandler).extracting("locationValues").asList().hasSize(4);
 		});
 	}
 
@@ -606,7 +599,7 @@ class WebFluxAutoConfigurationTests {
 			.withBean(LowPrecedenceConfigurer.class, LowPrecedenceConfigurer::new)
 			.run((context) -> assertThat(context.getBean(DelegatingWebFluxConfiguration.class))
 				.extracting("configurers.delegates")
-				.asInstanceOf(InstanceOfAssertFactories.LIST)
+				.asList()
 				.extracting((configurer) -> (Class) configurer.getClass())
 				.containsExactly(HighPrecedenceConfigurer.class, WebFluxConfig.class, LowPrecedenceConfigurer.class));
 	}
@@ -625,18 +618,6 @@ class WebFluxAutoConfigurationTests {
 				webSession.start();
 				assertThat(webSession.getMaxIdleTime()).hasSeconds(123);
 			})));
-	}
-
-	@Test
-	void customSessionMaxSessionsConfigurationShouldBeApplied() {
-		this.contextRunner.withPropertyValues("server.reactive.session.max-sessions:123")
-			.run(assertMaxSessionsWithWebSession(123));
-	}
-
-	@Test
-	void defaultSessionMaxSessionsConfigurationShouldBeInSync() {
-		int defaultMaxSessions = new InMemoryWebSessionStore().getMaxSessions();
-		this.contextRunner.run(assertMaxSessionsWithWebSession(defaultMaxSessions));
 	}
 
 	@Test
@@ -706,20 +687,8 @@ class WebFluxAutoConfigurationTests {
 	}
 
 	@Test
-	void asyncTaskExecutorWithPlatformThreadsAndApplicationTaskExecutor() {
+	void asyncTaskExecutorWithApplicationTaskExecutor() {
 		this.contextRunner.withConfiguration(AutoConfigurations.of(TaskExecutionAutoConfiguration.class))
-			.run((context) -> {
-				assertThat(context).hasSingleBean(AsyncTaskExecutor.class);
-				assertThat(context.getBean(RequestMappingHandlerAdapter.class)).extracting("scheduler.executor")
-					.isNull();
-			});
-	}
-
-	@Test
-	@EnabledForJreRange(min = JRE.JAVA_21)
-	void asyncTaskExecutorWithVirtualThreadsAndApplicationTaskExecutor() {
-		this.contextRunner.withPropertyValues("spring.threads.virtual.enabled=true")
-			.withConfiguration(AutoConfigurations.of(TaskExecutionAutoConfiguration.class))
 			.run((context) -> {
 				assertThat(context).hasSingleBean(AsyncTaskExecutor.class);
 				assertThat(context.getBean(RequestMappingHandlerAdapter.class)).extracting("scheduler.executor")
@@ -728,10 +697,8 @@ class WebFluxAutoConfigurationTests {
 	}
 
 	@Test
-	@EnabledForJreRange(min = JRE.JAVA_21)
-	void asyncTaskExecutorWithVirtualThreadsAndNonMatchApplicationTaskExecutorBean() {
-		this.contextRunner.withPropertyValues("spring.threads.virtual.enabled=true")
-			.withUserConfiguration(CustomApplicationTaskExecutorConfig.class)
+	void asyncTaskExecutorWithNonMatchApplicationTaskExecutorBean() {
+		this.contextRunner.withUserConfiguration(CustomApplicationTaskExecutorConfig.class)
 			.withConfiguration(AutoConfigurations.of(TaskExecutionAutoConfiguration.class))
 			.run((context) -> {
 				assertThat(context).doesNotHaveBean(AsyncTaskExecutor.class);
@@ -741,10 +708,8 @@ class WebFluxAutoConfigurationTests {
 	}
 
 	@Test
-	@EnabledForJreRange(min = JRE.JAVA_21)
-	void asyncTaskExecutorWithVirtualThreadsAndWebFluxConfigurerCanOverrideExecutor() {
-		this.contextRunner.withPropertyValues("spring.threads.virtual.enabled=true")
-			.withUserConfiguration(CustomAsyncTaskExecutorConfigurer.class)
+	void asyncTaskExecutorWithWebFluxConfigurerCanOverrideExecutor() {
+		this.contextRunner.withUserConfiguration(CustomAsyncTaskExecutorConfigurer.class)
 			.withConfiguration(AutoConfigurations.of(TaskExecutionAutoConfiguration.class))
 			.run((context) -> assertThat(context.getBean(RequestMappingHandlerAdapter.class))
 				.extracting("scheduler.executor")
@@ -752,15 +717,13 @@ class WebFluxAutoConfigurationTests {
 	}
 
 	@Test
-	@EnabledForJreRange(min = JRE.JAVA_21)
-	void asyncTaskExecutorWithVirtualThreadsAndCustomNonApplicationTaskExecutor() {
-		this.contextRunner.withPropertyValues("spring.threads.virtual.enabled=true")
-			.withUserConfiguration(CustomAsyncTaskExecutorConfig.class)
+	void asyncTaskExecutorWithCustomNonApplicationTaskExecutor() {
+		this.contextRunner.withUserConfiguration(CustomAsyncTaskExecutorConfig.class)
 			.withConfiguration(AutoConfigurations.of(TaskExecutionAutoConfiguration.class))
 			.run((context) -> {
 				assertThat(context).hasSingleBean(AsyncTaskExecutor.class);
 				assertThat(context.getBean(RequestMappingHandlerAdapter.class)).extracting("scheduler.executor")
-					.isNull();
+					.isNotSameAs(context.getBean("customTaskExecutor"));
 			});
 	}
 
@@ -785,16 +748,6 @@ class WebFluxAutoConfigurationTests {
 			WebSessionManager webSessionManager = context.getBean(WebSessionManager.class);
 			WebSession webSession = webSessionManager.getSession(webExchange).block();
 			session.accept(webSession);
-		};
-	}
-
-	private ContextConsumer<ReactiveWebApplicationContext> assertMaxSessionsWithWebSession(int maxSessions) {
-		return (context) -> {
-			WebSessionManager sessionManager = context.getBean(WebSessionManager.class);
-			assertThat(sessionManager).isInstanceOf(DefaultWebSessionManager.class);
-			WebSessionStore sessionStore = ((DefaultWebSessionManager) sessionManager).getSessionStore();
-			assertThat(sessionStore).isInstanceOf(InMemoryWebSessionStore.class);
-			assertThat(((InMemoryWebSessionStore) sessionStore).getMaxSessions()).isEqualTo(maxSessions);
 		};
 	}
 

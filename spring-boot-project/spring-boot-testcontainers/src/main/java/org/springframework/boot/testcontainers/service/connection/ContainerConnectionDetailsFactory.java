@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,22 +17,15 @@
 package org.springframework.boot.testcontainers.service.connection;
 
 import java.util.Arrays;
-import java.util.stream.Stream;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.testcontainers.containers.Container;
 
-import org.springframework.aot.hint.RuntimeHints;
-import org.springframework.aot.hint.RuntimeHintsRegistrar;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.autoconfigure.service.connection.ConnectionDetails;
 import org.springframework.boot.autoconfigure.service.connection.ConnectionDetailsFactory;
 import org.springframework.boot.origin.Origin;
 import org.springframework.boot.origin.OriginProvider;
 import org.springframework.core.ResolvableType;
-import org.springframework.core.io.support.SpringFactoriesLoader;
-import org.springframework.core.io.support.SpringFactoriesLoader.FailureHandler;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ObjectUtils;
@@ -93,7 +86,6 @@ public abstract class ContainerConnectionDetailsFactory<C extends Container<?>, 
 			}
 		}
 		catch (NoClassDefFoundError ex) {
-			// Ignore
 		}
 		return null;
 	}
@@ -157,27 +149,6 @@ public abstract class ContainerConnectionDetailsFactory<C extends Container<?>, 
 		@Override
 		public Origin getOrigin() {
 			return this.source.getOrigin();
-		}
-
-	}
-
-	static class ContainerConnectionDetailsFactoriesRuntimeHints implements RuntimeHintsRegistrar {
-
-		private static final Log logger = LogFactory.getLog(ContainerConnectionDetailsFactoriesRuntimeHints.class);
-
-		@Override
-		public void registerHints(RuntimeHints hints, ClassLoader classLoader) {
-			SpringFactoriesLoader.forDefaultResourceLocation(classLoader)
-				.load(ConnectionDetailsFactory.class, FailureHandler.logging(logger))
-				.stream()
-				.flatMap(this::requiredClassNames)
-				.forEach((requiredClassName) -> hints.reflection()
-					.registerTypeIfPresent(classLoader, requiredClassName));
-		}
-
-		private Stream<String> requiredClassNames(ConnectionDetailsFactory<?, ?> connectionDetailsFactory) {
-			return (connectionDetailsFactory instanceof ContainerConnectionDetailsFactory<?, ?> containerConnectionDetailsFactory)
-					? Stream.of(containerConnectionDetailsFactory.requiredClassNames) : Stream.empty();
 		}
 
 	}

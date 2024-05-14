@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,11 @@ import org.springframework.boot.context.properties.NestedConfigurationProperty;
 import org.springframework.boot.context.properties.bind.JavaBeanBinder.BeanProperties;
 import org.springframework.boot.context.properties.bind.JavaBeanBinder.BeanProperty;
 import org.springframework.core.KotlinDetector;
+import org.springframework.core.KotlinReflectionParameterNameDiscoverer;
+import org.springframework.core.ParameterNameDiscoverer;
+import org.springframework.core.PrioritizedParameterNameDiscoverer;
 import org.springframework.core.ResolvableType;
+import org.springframework.core.StandardReflectionParameterNameDiscoverer;
 import org.springframework.core.annotation.MergedAnnotations;
 import org.springframework.util.Assert;
 import org.springframework.util.ReflectionUtils;
@@ -88,8 +92,12 @@ public class BindableRuntimeHintsRegistrar implements RuntimeHintsRegistrar {
 	 * @param hints the hints contributed so far for the deployment unit
 	 */
 	public void registerHints(RuntimeHints hints) {
+		Set<Class<?>> compiledWithoutParameters = new HashSet<>();
 		for (Bindable<?> bindable : this.bindables) {
-			new Processor(bindable).process(hints.reflection());
+			new Processor(bindable, compiledWithoutParameters).process(hints.reflection());
+		}
+		if (!compiledWithoutParameters.isEmpty()) {
+			throw new MissingParametersCompilerArgumentException(compiledWithoutParameters);
 		}
 	}
 
@@ -136,7 +144,18 @@ public class BindableRuntimeHintsRegistrar implements RuntimeHintsRegistrar {
 	/**
 	 * Processor used to register the hints.
 	 */
-	private static final class Processor {
+	private final class Processor {
+
+		private static final ParameterNameDiscoverer parameterNameDiscoverer;
+
+		static {
+			PrioritizedParameterNameDiscoverer discoverer = new PrioritizedParameterNameDiscoverer();
+			if (KotlinDetector.isKotlinReflectPresent()) {
+				discoverer.addDiscoverer(new KotlinReflectionParameterNameDiscoverer());
+			}
+			discoverer.addDiscoverer(new StandardReflectionParameterNameDiscoverer());
+			parameterNameDiscoverer = discoverer;
+		}
 
 		private final Class<?> type;
 
@@ -146,17 +165,21 @@ public class BindableRuntimeHintsRegistrar implements RuntimeHintsRegistrar {
 
 		private final Set<Class<?>> seen;
 
-		Processor(Bindable<?> bindable) {
-			this(bindable, false, new HashSet<>());
+		private final Set<Class<?>> compiledWithoutParameters;
+
+		Processor(Bindable<?> bindable, Set<Class<?>> compiledWithoutParameters) {
+			this(bindable, false, new HashSet<>(), compiledWithoutParameters);
 		}
 
-		private Processor(Bindable<?> bindable, boolean nestedType, Set<Class<?>> seen) {
+		private Processor(Bindable<?> bindable, boolean nestedType, Set<Class<?>> seen,
+				Set<Class<?>> compiledWithoutParameters) {
 			this.type = bindable.getType().getRawClass();
 			this.bindConstructor = (bindable.getBindMethod() != BindMethod.JAVA_BEAN)
 					? BindConstructorProvider.DEFAULT.getBindConstructor(bindable.getType().resolve(), nestedType)
 					: null;
 			this.bean = JavaBeanBinder.BeanProperties.of(bindable);
 			this.seen = seen;
+			this.compiledWithoutParameters = compiledWithoutParameters;
 		}
 
 		void process(ReflectionHints hints) {
@@ -175,6 +198,7 @@ public class BindableRuntimeHintsRegistrar implements RuntimeHintsRegistrar {
 
 		private void handleConstructor(ReflectionHints hints) {
 			if (this.bindConstructor != null) {
+				verifyParameterNamesAreAvailable();
 				if (KotlinDetector.isKotlinType(this.bindConstructor.getDeclaringClass())) {
 					KotlinDelegate.handleConstructor(hints, this.bindConstructor);
 				}
@@ -187,6 +211,13 @@ public class BindableRuntimeHintsRegistrar implements RuntimeHintsRegistrar {
 				.filter(this::hasNoParameters)
 				.findFirst()
 				.ifPresent((constructor) -> hints.registerConstructor(constructor, ExecutableMode.INVOKE));
+		}
+
+		private void verifyParameterNamesAreAvailable() {
+			String[] parameterNames = parameterNameDiscoverer.getParameterNames(this.bindConstructor);
+			if (parameterNames == null) {
+				this.compiledWithoutParameters.add(this.bindConstructor.getDeclaringClass());
+			}
 		}
 
 		private boolean hasNoParameters(Constructor<?> candidate) {
@@ -237,7 +268,7 @@ public class BindableRuntimeHintsRegistrar implements RuntimeHintsRegistrar {
 		}
 
 		private void processNested(Class<?> type, ReflectionHints hints) {
-			new Processor(Bindable.of(type), true, this.seen).process(hints);
+			new Processor(Bindable.of(type), true, this.seen, this.compiledWithoutParameters).process(hints);
 		}
 
 		private Class<?> getComponentClass(ResolvableType type) {
@@ -310,7 +341,7 @@ public class BindableRuntimeHintsRegistrar implements RuntimeHintsRegistrar {
 	/**
 	 * Inner class to avoid a hard dependency on Kotlin at runtime.
 	 */
-	private static final class KotlinDelegate {
+	private static class KotlinDelegate {
 
 		static void handleConstructor(ReflectionHints hints, Constructor<?> constructor) {
 			KClass<?> kClass = JvmClassMappingKt.getKotlinClass(constructor.getDeclaringClass());

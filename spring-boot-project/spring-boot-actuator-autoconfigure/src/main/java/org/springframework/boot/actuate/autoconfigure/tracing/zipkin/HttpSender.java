@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,81 +18,135 @@ package org.springframework.boot.actuate.autoconfigure.tracing.zipkin;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.net.URI;
+import java.io.UncheckedIOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.zip.GZIPOutputStream;
 
-import zipkin2.reporter.BaseHttpSender;
-import zipkin2.reporter.BytesMessageSender;
-import zipkin2.reporter.Encoding;
-import zipkin2.reporter.HttpEndpointSupplier.Factory;
+import zipkin2.Call;
+import zipkin2.CheckResult;
+import zipkin2.codec.Encoding;
+import zipkin2.reporter.BytesMessageEncoder;
+import zipkin2.reporter.ClosedSenderException;
+import zipkin2.reporter.Sender;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.util.unit.DataSize;
 
 /**
- * A Zipkin {@link BytesMessageSender} that uses an HTTP client to send JSON spans.
- * Supports automatic compression with gzip.
+ * A Zipkin {@link Sender} that uses an HTTP client to send JSON spans. Supports automatic
+ * compression with gzip.
  *
  * @author Moritz Halbritter
  * @author Stefan Bratanov
  */
-abstract class HttpSender extends BaseHttpSender<URI, byte[]> {
+abstract class HttpSender extends Sender {
+
+	private static final DataSize MESSAGE_MAX_SIZE = DataSize.ofKilobytes(512);
+
+	private volatile boolean closed;
+
+	@Override
+	public Encoding encoding() {
+		return Encoding.JSON;
+	}
+
+	@Override
+	public int messageMaxBytes() {
+		return (int) MESSAGE_MAX_SIZE.toBytes();
+	}
+
+	@Override
+	public int messageSizeInBytes(List<byte[]> encodedSpans) {
+		return encoding().listSizeInBytes(encodedSpans);
+	}
+
+	@Override
+	public int messageSizeInBytes(int encodedSizeInBytes) {
+		return encoding().listSizeInBytes(encodedSizeInBytes);
+	}
+
+	@Override
+	public CheckResult check() {
+		try {
+			sendSpans(Collections.emptyList()).execute();
+			return CheckResult.OK;
+		}
+		catch (IOException | RuntimeException ex) {
+			return CheckResult.failed(ex);
+		}
+	}
+
+	@Override
+	public void close() throws IOException {
+		this.closed = true;
+	}
 
 	/**
-	 * Only use gzip compression on data which is bigger than this in bytes.
+	 * The returned {@link HttpPostCall} will send span(s) as a POST to a zipkin endpoint
+	 * when executed.
+	 * @param batchedEncodedSpans list of encoded spans as a byte array
+	 * @return an instance of a Zipkin {@link Call} which can be executed
 	 */
-	private static final DataSize COMPRESSION_THRESHOLD = DataSize.ofKilobytes(1);
-
-	HttpSender(Encoding encoding, Factory endpointSupplierFactory, String endpoint) {
-		super(encoding, endpointSupplierFactory, endpoint);
-	}
+	protected abstract HttpPostCall sendSpans(byte[] batchedEncodedSpans);
 
 	@Override
-	protected URI newEndpoint(String endpoint) {
-		return URI.create(endpoint);
-	}
-
-	@Override
-	protected byte[] newBody(List<byte[]> list) {
-		return this.encoding.encode(list);
-	}
-
-	@Override
-	protected void postSpans(URI endpoint, byte[] body) throws IOException {
-		HttpHeaders headers = getDefaultHeaders();
-		if (needsCompression(body)) {
-			body = compress(body);
-			headers.set("Content-Encoding", "gzip");
+	public Call<Void> sendSpans(List<byte[]> encodedSpans) {
+		if (this.closed) {
+			throw new ClosedSenderException();
 		}
-		postSpans(endpoint, headers, body);
+		return sendSpans(BytesMessageEncoder.JSON.encode(encodedSpans));
 	}
 
-	/**
-	 * This will send span(s) as a POST to a zipkin endpoint.
-	 * @param endpoint the POST endpoint. For example, http://localhost:9411/api/v2/spans.
-	 * @param headers headers for the POST request
-	 * @param body list of possibly gzipped, encoded spans.
-	 */
-	abstract void postSpans(URI endpoint, HttpHeaders headers, byte[] body) throws IOException;
+	abstract static class HttpPostCall extends Call.Base<Void> {
 
-	HttpHeaders getDefaultHeaders() {
-		HttpHeaders headers = new HttpHeaders();
-		headers.set("b3", "0");
-		headers.set("Content-Type", this.encoding.mediaType());
-		return headers;
-	}
+		/**
+		 * Only use gzip compression on data which is bigger than this in bytes.
+		 */
+		private static final DataSize COMPRESSION_THRESHOLD = DataSize.ofKilobytes(1);
 
-	private boolean needsCompression(byte[] body) {
-		return body.length > COMPRESSION_THRESHOLD.toBytes();
-	}
+		private final byte[] body;
 
-	private byte[] compress(byte[] input) throws IOException {
-		ByteArrayOutputStream result = new ByteArrayOutputStream();
-		try (GZIPOutputStream gzip = new GZIPOutputStream(result)) {
-			gzip.write(input);
+		HttpPostCall(byte[] body) {
+			this.body = body;
 		}
-		return result.toByteArray();
+
+		protected byte[] getBody() {
+			if (needsCompression()) {
+				return compress(this.body);
+			}
+			return this.body;
+		}
+
+		protected byte[] getUncompressedBody() {
+			return this.body;
+		}
+
+		protected HttpHeaders getDefaultHeaders() {
+			HttpHeaders headers = new HttpHeaders();
+			headers.set("b3", "0");
+			headers.set("Content-Type", "application/json");
+			if (needsCompression()) {
+				headers.set("Content-Encoding", "gzip");
+			}
+			return headers;
+		}
+
+		private boolean needsCompression() {
+			return this.body.length > COMPRESSION_THRESHOLD.toBytes();
+		}
+
+		private byte[] compress(byte[] input) {
+			ByteArrayOutputStream result = new ByteArrayOutputStream();
+			try (GZIPOutputStream gzip = new GZIPOutputStream(result)) {
+				gzip.write(input);
+			}
+			catch (IOException ex) {
+				throw new UncheckedIOException(ex);
+			}
+			return result.toByteArray();
+		}
+
 	}
 
 }

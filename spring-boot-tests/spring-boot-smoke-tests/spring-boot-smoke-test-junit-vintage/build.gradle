@@ -21,11 +21,9 @@ test {
 					throw new GradleException("No tests were executed")
 				}
 			}
-		}
+	 	}
 	}
-	develocity {
-		predictiveTestSelection {
-			enabled = false
-		}
+	predictiveSelection {
+		enabled = false
 	}
 }

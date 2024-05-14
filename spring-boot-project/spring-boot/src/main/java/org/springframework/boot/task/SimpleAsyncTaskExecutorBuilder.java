@@ -16,7 +16,6 @@
 
 package org.springframework.boot.task;
 
-import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -55,21 +54,17 @@ public class SimpleAsyncTaskExecutorBuilder {
 
 	private final Set<SimpleAsyncTaskExecutorCustomizer> customizers;
 
-	private final Duration taskTerminationTimeout;
-
 	public SimpleAsyncTaskExecutorBuilder() {
-		this(null, null, null, null, null, null);
+		this(null, null, null, null, null);
 	}
 
 	private SimpleAsyncTaskExecutorBuilder(Boolean virtualThreads, String threadNamePrefix, Integer concurrencyLimit,
-			TaskDecorator taskDecorator, Set<SimpleAsyncTaskExecutorCustomizer> customizers,
-			Duration taskTerminationTimeout) {
+			TaskDecorator taskDecorator, Set<SimpleAsyncTaskExecutorCustomizer> customizers) {
 		this.virtualThreads = virtualThreads;
 		this.threadNamePrefix = threadNamePrefix;
 		this.concurrencyLimit = concurrencyLimit;
 		this.taskDecorator = taskDecorator;
 		this.customizers = customizers;
-		this.taskTerminationTimeout = taskTerminationTimeout;
 	}
 
 	/**
@@ -79,7 +74,7 @@ public class SimpleAsyncTaskExecutorBuilder {
 	 */
 	public SimpleAsyncTaskExecutorBuilder threadNamePrefix(String threadNamePrefix) {
 		return new SimpleAsyncTaskExecutorBuilder(this.virtualThreads, threadNamePrefix, this.concurrencyLimit,
-				this.taskDecorator, this.customizers, this.taskTerminationTimeout);
+				this.taskDecorator, this.customizers);
 	}
 
 	/**
@@ -89,7 +84,7 @@ public class SimpleAsyncTaskExecutorBuilder {
 	 */
 	public SimpleAsyncTaskExecutorBuilder virtualThreads(Boolean virtualThreads) {
 		return new SimpleAsyncTaskExecutorBuilder(virtualThreads, this.threadNamePrefix, this.concurrencyLimit,
-				this.taskDecorator, this.customizers, this.taskTerminationTimeout);
+				this.taskDecorator, this.customizers);
 	}
 
 	/**
@@ -99,7 +94,7 @@ public class SimpleAsyncTaskExecutorBuilder {
 	 */
 	public SimpleAsyncTaskExecutorBuilder concurrencyLimit(Integer concurrencyLimit) {
 		return new SimpleAsyncTaskExecutorBuilder(this.virtualThreads, this.threadNamePrefix, concurrencyLimit,
-				this.taskDecorator, this.customizers, this.taskTerminationTimeout);
+				this.taskDecorator, this.customizers);
 	}
 
 	/**
@@ -109,18 +104,7 @@ public class SimpleAsyncTaskExecutorBuilder {
 	 */
 	public SimpleAsyncTaskExecutorBuilder taskDecorator(TaskDecorator taskDecorator) {
 		return new SimpleAsyncTaskExecutorBuilder(this.virtualThreads, this.threadNamePrefix, this.concurrencyLimit,
-				taskDecorator, this.customizers, this.taskTerminationTimeout);
-	}
-
-	/**
-	 * Set the task termination timeout.
-	 * @param taskTerminationTimeout the task termination timeout
-	 * @return a new builder instance
-	 * @since 3.2.1
-	 */
-	public SimpleAsyncTaskExecutorBuilder taskTerminationTimeout(Duration taskTerminationTimeout) {
-		return new SimpleAsyncTaskExecutorBuilder(this.virtualThreads, this.threadNamePrefix, this.concurrencyLimit,
-				this.taskDecorator, this.customizers, taskTerminationTimeout);
+				taskDecorator, this.customizers);
 	}
 
 	/**
@@ -150,7 +134,7 @@ public class SimpleAsyncTaskExecutorBuilder {
 			Iterable<? extends SimpleAsyncTaskExecutorCustomizer> customizers) {
 		Assert.notNull(customizers, "Customizers must not be null");
 		return new SimpleAsyncTaskExecutorBuilder(this.virtualThreads, this.threadNamePrefix, this.concurrencyLimit,
-				this.taskDecorator, append(null, customizers), this.taskTerminationTimeout);
+				this.taskDecorator, append(null, customizers));
 	}
 
 	/**
@@ -178,7 +162,7 @@ public class SimpleAsyncTaskExecutorBuilder {
 			Iterable<? extends SimpleAsyncTaskExecutorCustomizer> customizers) {
 		Assert.notNull(customizers, "Customizers must not be null");
 		return new SimpleAsyncTaskExecutorBuilder(this.virtualThreads, this.threadNamePrefix, this.concurrencyLimit,
-				this.taskDecorator, append(this.customizers, customizers), this.taskTerminationTimeout);
+				this.taskDecorator, append(this.customizers, customizers));
 	}
 
 	/**
@@ -219,7 +203,6 @@ public class SimpleAsyncTaskExecutorBuilder {
 		map.from(this.threadNamePrefix).whenHasText().to(taskExecutor::setThreadNamePrefix);
 		map.from(this.concurrencyLimit).to(taskExecutor::setConcurrencyLimit);
 		map.from(this.taskDecorator).to(taskExecutor::setTaskDecorator);
-		map.from(this.taskTerminationTimeout).as(Duration::toMillis).to(taskExecutor::setTaskTerminationTimeout);
 		if (!CollectionUtils.isEmpty(this.customizers)) {
 			this.customizers.forEach((customizer) -> customizer.customize(taskExecutor));
 		}

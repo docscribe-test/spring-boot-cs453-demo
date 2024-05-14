@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ public final class SnakeTimer {
 			if (snakes.isEmpty()) {
 				startTimer();
 			}
-			snakes.put(snake.getId(), snake);
+			snakes.put(Integer.valueOf(snake.getId()), snake);
 		}
 	}
 
@@ -60,7 +60,7 @@ public final class SnakeTimer {
 
 	public static void removeSnake(Snake snake) {
 		synchronized (MONITOR) {
-			snakes.remove(snake.getId());
+			snakes.remove(Integer.valueOf(snake.getId()));
 			if (snakes.isEmpty()) {
 				stopTimer();
 			}
@@ -77,7 +77,7 @@ public final class SnakeTimer {
 				sb.append(',');
 			}
 		}
-		broadcast(String.format("{'type': 'update', 'data' : [%s]}", sb));
+		broadcast(String.format("{'type': 'update', 'data' : [%s]}", sb.toString()));
 	}
 
 	public static void broadcast(String message) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,29 +41,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class MetricsAspectsAutoConfigurationTests {
 
 	private final ApplicationContextRunner contextRunner = new ApplicationContextRunner().with(MetricsRun.simple())
-		.withPropertyValues("management.observations.annotations.enabled=true")
 		.withConfiguration(AutoConfigurations.of(MetricsAspectsAutoConfiguration.class));
-
-	@Test
-	void shouldNotConfigureAspectsByDefault() {
-		new ApplicationContextRunner().with(MetricsRun.simple())
-			.withConfiguration(AutoConfigurations.of(MetricsAspectsAutoConfiguration.class))
-			.run((context) -> {
-				assertThat(context).doesNotHaveBean(CountedAspect.class);
-				assertThat(context).doesNotHaveBean(TimedAspect.class);
-			});
-	}
-
-	@Test
-	void shouldConfigureAspectsWithLegacyProperty() {
-		new ApplicationContextRunner().with(MetricsRun.simple())
-			.withConfiguration(AutoConfigurations.of(MetricsAspectsAutoConfiguration.class))
-			.withPropertyValues("micrometer.observations.annotations.enabled=true")
-			.run((context) -> {
-				assertThat(context).hasSingleBean(CountedAspect.class);
-				assertThat(context).hasSingleBean(TimedAspect.class);
-			});
-	}
 
 	@Test
 	void shouldConfigureAspects() {
@@ -100,12 +78,11 @@ class MetricsAspectsAutoConfigurationTests {
 
 	@Test
 	void shouldNotConfigureAspectsIfMeterRegistryBeanIsMissing() {
-		new ApplicationContextRunner().withConfiguration(AutoConfigurations.of(MetricsAspectsAutoConfiguration.class))
-			.run((context) -> {
-				assertThat(context).doesNotHaveBean(MeterRegistry.class);
-				assertThat(context).doesNotHaveBean(CountedAspect.class);
-				assertThat(context).doesNotHaveBean(TimedAspect.class);
-			});
+		new ApplicationContextRunner().run((context) -> {
+			assertThat(context).doesNotHaveBean(MeterRegistry.class);
+			assertThat(context).doesNotHaveBean(CountedAspect.class);
+			assertThat(context).doesNotHaveBean(TimedAspect.class);
+		});
 	}
 
 	@Test

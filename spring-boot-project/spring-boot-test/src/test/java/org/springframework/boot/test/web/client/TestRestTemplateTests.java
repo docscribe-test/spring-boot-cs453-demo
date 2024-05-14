@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ import org.springframework.http.RequestEntity;
 import org.springframework.http.client.ClientHttpRequest;
 import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
+import org.springframework.http.client.JettyClientHttpRequestFactory;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.mock.env.MockEnvironment;
 import org.springframework.mock.http.client.MockClientHttpRequest;
@@ -85,15 +86,16 @@ class TestRestTemplateTests {
 
 	@Test
 	void doNotReplaceCustomRequestFactory() {
-		RestTemplateBuilder builder = new RestTemplateBuilder().requestFactory(TestClientHttpRequestFactory.class);
+		RestTemplateBuilder builder = new RestTemplateBuilder()
+			.requestFactory(HttpComponentsClientHttpRequestFactory.class);
 		TestRestTemplate testRestTemplate = new TestRestTemplate(builder);
 		assertThat(testRestTemplate.getRestTemplate().getRequestFactory())
-			.isInstanceOf(TestClientHttpRequestFactory.class);
+			.isInstanceOf(HttpComponentsClientHttpRequestFactory.class);
 	}
 
 	@Test
 	void useTheSameRequestFactoryClassWithBasicAuth() {
-		TestClientHttpRequestFactory customFactory = new TestClientHttpRequestFactory();
+		JettyClientHttpRequestFactory customFactory = new JettyClientHttpRequestFactory();
 		RestTemplateBuilder builder = new RestTemplateBuilder().requestFactory(() -> customFactory);
 		TestRestTemplate testRestTemplate = new TestRestTemplate(builder).withBasicAuth("test", "test");
 		RestTemplate restTemplate = testRestTemplate.getRestTemplate();
@@ -382,10 +384,6 @@ class TestRestTemplateTests {
 	interface TestRestTemplateCallback {
 
 		void doWithTestRestTemplate(TestRestTemplate testRestTemplate, URI relativeUri);
-
-	}
-
-	static class TestClientHttpRequestFactory extends SimpleClientHttpRequestFactory {
 
 	}
 

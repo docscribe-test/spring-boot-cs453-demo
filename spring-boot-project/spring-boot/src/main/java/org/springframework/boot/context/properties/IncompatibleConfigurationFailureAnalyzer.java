@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package org.springframework.boot.context.properties;
 
+import java.util.stream.Collectors;
+
 import org.springframework.boot.diagnostics.AbstractFailureAnalyzer;
 import org.springframework.boot.diagnostics.FailureAnalysis;
 
@@ -30,7 +32,7 @@ class IncompatibleConfigurationFailureAnalyzer extends AbstractFailureAnalyzer<I
 	@Override
 	protected FailureAnalysis analyze(Throwable rootFailure, IncompatibleConfigurationException cause) {
 		String action = String.format("Review the docs for %s and change the configured values.",
-				String.join(", ", cause.getIncompatibleKeys()));
+				cause.getIncompatibleKeys().stream().collect(Collectors.joining(", ")));
 		return new FailureAnalysis(cause.getMessage(), action, cause);
 	}
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatException;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -285,33 +285,30 @@ class BraveAutoConfigurationTests {
 		this.contextRunner
 			.withPropertyValues("management.tracing.propagation.type=W3C",
 					"management.tracing.brave.span-joining-supported=true")
-			.run((context) -> assertThatException().isThrownBy(() -> context.getBean(Tracing.class))
-				.havingRootCause()
+			.run((context) -> assertThatThrownBy(() -> context.getBean(Tracing.class)).rootCause()
 				.isExactlyInstanceOf(IncompatibleConfigurationException.class)
-				.withMessage("The following configuration properties have incompatible values: "
-						+ "[management.tracing.propagation.type, management.tracing.brave.span-joining-supported]"));
+				.hasMessage(
+						"The following configuration properties have incompatible values: [management.tracing.propagation.type, management.tracing.brave.span-joining-supported]"));
 	}
 
 	@Test
 	void shouldFailIfSupportJoinedSpansIsEnabledAndW3cIsChosenAsConsume() {
 		this.contextRunner.withPropertyValues("management.tracing.propagation.produce=B3",
 				"management.tracing.propagation.consume=W3C", "management.tracing.brave.span-joining-supported=true")
-			.run((context) -> assertThatException().isThrownBy(() -> context.getBean(Tracing.class))
-				.havingRootCause()
+			.run((context) -> assertThatThrownBy(() -> context.getBean(Tracing.class)).rootCause()
 				.isExactlyInstanceOf(IncompatibleConfigurationException.class)
-				.withMessage("The following configuration properties have incompatible values: "
-						+ "[management.tracing.propagation.consume, management.tracing.brave.span-joining-supported]"));
+				.hasMessage(
+						"The following configuration properties have incompatible values: [management.tracing.propagation.consume, management.tracing.brave.span-joining-supported]"));
 	}
 
 	@Test
 	void shouldFailIfSupportJoinedSpansIsEnabledAndW3cIsChosenAsProduce() {
 		this.contextRunner.withPropertyValues("management.tracing.propagation.consume=B3",
 				"management.tracing.propagation.produce=W3C", "management.tracing.brave.span-joining-supported=true")
-			.run((context) -> assertThatException().isThrownBy(() -> context.getBean(Tracing.class))
-				.havingRootCause()
+			.run((context) -> assertThatThrownBy(() -> context.getBean(Tracing.class)).rootCause()
 				.isExactlyInstanceOf(IncompatibleConfigurationException.class)
-				.withMessage("The following configuration properties have incompatible values: "
-						+ "[management.tracing.propagation.produce, management.tracing.brave.span-joining-supported]"));
+				.hasMessage(
+						"The following configuration properties have incompatible values: [management.tracing.propagation.produce, management.tracing.brave.span-joining-supported]"));
 	}
 
 	@Test
@@ -333,34 +330,14 @@ class BraveAutoConfigurationTests {
 				.getBean(CompositeSpanHandlerComponentsConfiguration.class);
 			CompositeSpanHandler composite = context.getBean(CompositeSpanHandler.class);
 			assertThat(composite).extracting("spanFilters")
-				.asInstanceOf(InstanceOfAssertFactories.LIST)
+				.asList()
 				.containsExactly(components.filter1, components.filter2);
 			assertThat(composite).extracting("filters")
-				.asInstanceOf(InstanceOfAssertFactories.LIST)
+				.asList()
 				.containsExactly(components.predicate2, components.predicate1);
 			assertThat(composite).extracting("reporters")
-				.asInstanceOf(InstanceOfAssertFactories.LIST)
+				.asList()
 				.containsExactly(components.reporter1, components.reporter3, components.reporter2);
-		});
-	}
-
-	@Test
-	void shouldDisablePropagationIfTracingIsDisabled() {
-		this.contextRunner.withPropertyValues("management.tracing.enabled=false").run((context) -> {
-			assertThat(context).hasSingleBean(Factory.class);
-			Factory factory = context.getBean(Factory.class);
-			Propagation<String> propagation = factory.get();
-			assertThat(propagation.keys()).isEmpty();
-		});
-	}
-
-	@Test
-	void shouldConfigureTaggedFields() {
-		this.contextRunner.withPropertyValues("management.tracing.baggage.tag-fields=t1").run((context) -> {
-			BraveTracer braveTracer = context.getBean(BraveTracer.class);
-			assertThat(braveTracer).extracting("braveBaggageManager.tagFields")
-				.asInstanceOf(InstanceOfAssertFactories.list(String.class))
-				.containsExactly("t1");
 		});
 	}
 
@@ -453,7 +430,7 @@ class BraveAutoConfigurationTests {
 	}
 
 	@Configuration(proxyBeanMethods = false)
-	private static final class CustomConfiguration {
+	private static class CustomConfiguration {
 
 		@Bean
 		Tracing customTracing() {

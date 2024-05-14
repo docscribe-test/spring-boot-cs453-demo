@@ -3,7 +3,3 @@ type Query {
     bookById(id: ID): Book
     books: BookConnection
 }
-
-type Subscription {
-    booksOnSale(minPages: Int) : Book!
-}

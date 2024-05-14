@@ -16,7 +16,8 @@
 
 package org.springframework.boot.autoconfigure.ssl;
 
-import org.springframework.beans.factory.ObjectProvider;
+import java.util.List;
+
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -36,27 +37,19 @@ import org.springframework.context.annotation.Bean;
 @EnableConfigurationProperties(SslProperties.class)
 public class SslAutoConfiguration {
 
-	private final SslProperties sslProperties;
-
-	SslAutoConfiguration(SslProperties sslProperties) {
-		this.sslProperties = sslProperties;
+	SslAutoConfiguration() {
 	}
 
 	@Bean
-	FileWatcher fileWatcher() {
-		return new FileWatcher(this.sslProperties.getBundle().getWatch().getFile().getQuietPeriod());
-	}
-
-	@Bean
-	SslPropertiesBundleRegistrar sslPropertiesSslBundleRegistrar(FileWatcher fileWatcher) {
-		return new SslPropertiesBundleRegistrar(this.sslProperties, fileWatcher);
+	public SslPropertiesBundleRegistrar sslPropertiesSslBundleRegistrar(SslProperties sslProperties) {
+		return new SslPropertiesBundleRegistrar(sslProperties);
 	}
 
 	@Bean
 	@ConditionalOnMissingBean({ SslBundleRegistry.class, SslBundles.class })
-	DefaultSslBundleRegistry sslBundleRegistry(ObjectProvider<SslBundleRegistrar> sslBundleRegistrars) {
+	public DefaultSslBundleRegistry sslBundleRegistry(List<SslBundleRegistrar> sslBundleRegistrars) {
 		DefaultSslBundleRegistry registry = new DefaultSslBundleRegistry();
-		sslBundleRegistrars.orderedStream().forEach((registrar) -> registrar.registerBundles(registry));
+		sslBundleRegistrars.forEach((registrar) -> registrar.registerBundles(registry));
 		return registry;
 	}
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,8 +32,6 @@ import org.gradle.api.plugins.JavaPlatformPlugin;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.publish.PublishingExtension;
 import org.gradle.api.publish.maven.plugins.MavenPublishPlugin;
-
-import org.springframework.util.FileSystemUtils;
 
 /**
  * A plugin to make a project's {@code deployment} publication available as a Maven
@@ -114,7 +112,7 @@ public class MavenRepositoryPlugin implements Plugin<Project> {
 
 		@Override
 		public void execute(Task task) {
-			FileSystemUtils.deleteRecursively(this.location);
+			task.getProject().delete(this.location);
 		}
 
 	}

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ import org.springframework.boot.testsupport.testcontainers.DisabledIfDockerUnava
 import org.springframework.util.Assert;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assumptions.assumeThat;
 
 /**
  * Integration tests loader that supports fat jars.
@@ -51,12 +52,11 @@ class LoaderIntegrationTests {
 
 	@ParameterizedTest
 	@MethodSource("javaRuntimes")
-	void runJar(JavaRuntime javaRuntime) {
+	void readUrlsWithoutWarning(JavaRuntime javaRuntime) {
 		try (GenericContainer<?> container = createContainer(javaRuntime, "spring-boot-loader-tests-app", null)) {
 			container.start();
 			System.out.println(this.output.toUtf8String());
 			assertThat(this.output.toUtf8String()).contains(">>>>> 287649 BYTES from")
-				.contains(">>>>> gh-7161 [/gh-7161/example.txt]")
 				.doesNotContain("WARNING:")
 				.doesNotContain("illegal")
 				.doesNotContain("jar written to temp");
@@ -66,6 +66,7 @@ class LoaderIntegrationTests {
 	@ParameterizedTest
 	@MethodSource("javaRuntimes")
 	void runSignedJar(JavaRuntime javaRuntime) {
+		assumeThat(javaRuntime.toString()).isNotEqualTo("Oracle JDK 17"); // gh-28837
 		try (GenericContainer<?> container = createContainer(javaRuntime, "spring-boot-loader-tests-signed-jar",
 				null)) {
 			container.start();
@@ -108,9 +109,9 @@ class LoaderIntegrationTests {
 	static Stream<JavaRuntime> javaRuntimes() {
 		List<JavaRuntime> javaRuntimes = new ArrayList<>();
 		javaRuntimes.add(JavaRuntime.openJdk(JavaVersion.SEVENTEEN));
-		javaRuntimes.add(JavaRuntime.openJdk(JavaVersion.TWENTY_ONE));
+		javaRuntimes.add(JavaRuntime.openJdk(JavaVersion.TWENTY));
 		javaRuntimes.add(JavaRuntime.oracleJdk17());
-		javaRuntimes.add(JavaRuntime.openJdkEarlyAccess(JavaVersion.TWENTY_TWO));
+		javaRuntimes.add(JavaRuntime.openJdkEarlyAccess(JavaVersion.TWENTY_ONE));
 		return javaRuntimes.stream().filter(JavaRuntime::isCompatible);
 	}
 

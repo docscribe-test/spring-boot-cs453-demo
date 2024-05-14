@@ -27,9 +27,6 @@ import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.springframework.util.Assert;
-import org.springframework.util.CollectionUtils;
-
 /**
  * Parser for X.509 certificates in PEM format.
  *
@@ -51,18 +48,17 @@ final class PemCertificateParser {
 
 	/**
 	 * Parse certificates from the specified string.
-	 * @param text the text to parse
+	 * @param certificates the certificates to parse
 	 * @return the parsed certificates
 	 */
-	static List<X509Certificate> parse(String text) {
-		if (text == null) {
+	static X509Certificate[] parse(String certificates) {
+		if (certificates == null) {
 			return null;
 		}
 		CertificateFactory factory = getCertificateFactory();
 		List<X509Certificate> certs = new ArrayList<>();
-		readCertificates(text, factory, certs::add);
-		Assert.state(!CollectionUtils.isEmpty(certs), "Missing certificates or unrecognized format");
-		return List.copyOf(certs);
+		readCertificates(certificates, factory, certs::add);
+		return (!certs.isEmpty()) ? certs.toArray(X509Certificate[]::new) : null;
 	}
 
 	private static CertificateFactory getCertificateFactory() {

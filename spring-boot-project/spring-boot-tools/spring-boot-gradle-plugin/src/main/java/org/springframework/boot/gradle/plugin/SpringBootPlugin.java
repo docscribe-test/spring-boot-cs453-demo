@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -123,8 +123,8 @@ public class SpringBootPlugin implements Plugin<Project> {
 
 	private void verifyGradleVersion() {
 		GradleVersion currentVersion = GradleVersion.current();
-		if (currentVersion.compareTo(GradleVersion.version("7.5")) < 0) {
-			throw new GradleException("Spring Boot plugin requires Gradle 7.x (7.5 or later). "
+		if (currentVersion.compareTo(GradleVersion.version("7.4")) < 0) {
+			throw new GradleException("Spring Boot plugin requires Gradle 7.x (7.4 or later). "
 					+ "The current version is " + currentVersion);
 		}
 	}
@@ -145,8 +145,7 @@ public class SpringBootPlugin implements Plugin<Project> {
 				project.getArtifacts());
 		List<PluginApplicationAction> actions = Arrays.asList(new JavaPluginAction(singlePublishedArtifact),
 				new WarPluginAction(singlePublishedArtifact), new DependencyManagementPluginAction(),
-				new ApplicationPluginAction(), new KotlinPluginAction(), new NativeImagePluginAction(),
-				new CycloneDxPluginAction());
+				new ApplicationPluginAction(), new KotlinPluginAction(), new NativeImagePluginAction());
 		for (PluginApplicationAction action : actions) {
 			withPluginClassOfAction(action,
 					(pluginClass) -> project.getPlugins().withType(pluginClass, (plugin) -> action.execute(project)));

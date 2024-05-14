@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,11 +42,7 @@ import org.springframework.batch.core.configuration.support.DefaultBatchConfigur
 import org.springframework.batch.core.explore.JobExplorer;
 import org.springframework.batch.core.job.AbstractJob;
 import org.springframework.batch.core.launch.JobLauncher;
-import org.springframework.batch.core.launch.JobOperator;
-import org.springframework.batch.core.repository.ExecutionContextSerializer;
 import org.springframework.batch.core.repository.JobRepository;
-import org.springframework.batch.core.repository.dao.DefaultExecutionContextSerializer;
-import org.springframework.batch.core.repository.dao.Jackson2ExecutionContextStringSerializer;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanPostProcessor;
@@ -61,12 +57,14 @@ import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.EmbeddedDataSourceConfiguration;
 import org.springframework.boot.autoconfigure.liquibase.LiquibaseAutoConfiguration;
+import org.springframework.boot.autoconfigure.logging.ConditionEvaluationReportLoggingListener;
 import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.boot.autoconfigure.orm.jpa.test.City;
 import org.springframework.boot.autoconfigure.transaction.TransactionAutoConfiguration;
 import org.springframework.boot.autoconfigure.transaction.TransactionManagerCustomizationAutoConfiguration;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.boot.jdbc.init.DataSourceScriptDatabaseInitializer;
+import org.springframework.boot.logging.LogLevel;
 import org.springframework.boot.sql.init.DatabaseInitializationMode;
 import org.springframework.boot.sql.init.DatabaseInitializationSettings;
 import org.springframework.boot.test.context.FilteredClassLoader;
@@ -99,8 +97,6 @@ import static org.mockito.Mockito.mock;
  * @author Vedran Pavic
  * @author Kazuki Shimizu
  * @author Mahmoud Ben Hassine
- * @author Lars Uffmann
- * @author Lasse Wulff
  */
 @ExtendWith(OutputCaptureExtension.class)
 class BatchAutoConfigurationTests {
@@ -111,13 +107,11 @@ class BatchAutoConfigurationTests {
 
 	@Test
 	void testDefaultContext() {
-		this.contextRunner.withUserConfiguration(TestConfiguration.class, EmbeddedDataSourceConfiguration.class)
+		this.contextRunner.withInitializer(ConditionEvaluationReportLoggingListener.forLogLevel(LogLevel.INFO))
+			.withUserConfiguration(TestConfiguration.class, EmbeddedDataSourceConfiguration.class)
 			.run((context) -> {
-				assertThat(context).hasSingleBean(JobRepository.class);
 				assertThat(context).hasSingleBean(JobLauncher.class);
 				assertThat(context).hasSingleBean(JobExplorer.class);
-				assertThat(context).hasSingleBean(JobRegistry.class);
-				assertThat(context).hasSingleBean(JobOperator.class);
 				assertThat(context.getBean(BatchProperties.class).getJdbc().getInitializeSchema())
 					.isEqualTo(DatabaseInitializationMode.EMBEDDED);
 				assertThat(new JdbcTemplate(context.getBean(DataSource.class))
@@ -350,18 +344,6 @@ class BatchAutoConfigurationTests {
 	}
 
 	@Test
-	void testBatchTransactionManager() {
-		this.contextRunner.withUserConfiguration(TestConfiguration.class, BatchTransactionManagerConfiguration.class)
-			.run((context) -> {
-				assertThat(context).hasSingleBean(SpringBootBatchConfiguration.class);
-				PlatformTransactionManager batchTransactionManager = context.getBean("batchTransactionManager",
-						PlatformTransactionManager.class);
-				assertThat(context.getBean(SpringBootBatchConfiguration.class).getTransactionManager())
-					.isEqualTo(batchTransactionManager);
-			});
-	}
-
-	@Test
 	void jobRepositoryBeansDependOnBatchDataSourceInitializer() {
 		this.contextRunner.withUserConfiguration(TestConfiguration.class, EmbeddedDataSourceConfiguration.class)
 			.run((context) -> {
@@ -476,27 +458,6 @@ class BatchAutoConfigurationTests {
 			.withMessage("No job found with name 'three'");
 	}
 
-	@Test
-	void customExecutionContextSerializerIsUsed() {
-		this.contextRunner.withUserConfiguration(TestConfiguration.class, EmbeddedDataSourceConfiguration.class)
-			.withUserConfiguration(CustomExecutionContextConfiguration.class)
-			.run((context) -> {
-				assertThat(context).hasSingleBean(Jackson2ExecutionContextStringSerializer.class);
-				assertThat(context.getBean(SpringBootBatchConfiguration.class).getExecutionContextSerializer())
-					.isInstanceOf(Jackson2ExecutionContextStringSerializer.class);
-			});
-	}
-
-	@Test
-	void defaultExecutionContextSerializerIsUsed() {
-		this.contextRunner.withUserConfiguration(TestConfiguration.class, EmbeddedDataSourceConfiguration.class)
-			.run((context) -> {
-				assertThat(context).doesNotHaveBean(ExecutionContextSerializer.class);
-				assertThat(context.getBean(SpringBootBatchConfiguration.class).getExecutionContextSerializer())
-					.isInstanceOf(DefaultExecutionContextSerializer.class);
-			});
-	}
-
 	private JobLauncherApplicationRunner createInstance(String... registeredJobNames) {
 		JobLauncherApplicationRunner runner = new JobLauncherApplicationRunner(mock(JobLauncher.class),
 				mock(JobExplorer.class), mock(JobRepository.class));
@@ -513,40 +474,18 @@ class BatchAutoConfigurationTests {
 	}
 
 	@Configuration(proxyBeanMethods = false)
-	static class BatchDataSourceConfiguration {
+	protected static class BatchDataSourceConfiguration {
 
 		@Bean
 		@Primary
-		DataSource normalDataSource() {
+		public DataSource normalDataSource() {
 			return DataSourceBuilder.create().url("jdbc:hsqldb:mem:normal").username("sa").build();
 		}
 
 		@BatchDataSource
 		@Bean
-		DataSource batchDataSource() {
+		public DataSource batchDataSource() {
 			return DataSourceBuilder.create().url("jdbc:hsqldb:mem:batchdatasource").username("sa").build();
-		}
-
-	}
-
-	@Configuration(proxyBeanMethods = false)
-	static class BatchTransactionManagerConfiguration {
-
-		@Bean
-		DataSource dataSource() {
-			return DataSourceBuilder.create().url("jdbc:hsqldb:mem:database").username("sa").build();
-		}
-
-		@Bean
-		@Primary
-		PlatformTransactionManager normalTransactionManager() {
-			return mock(PlatformTransactionManager.class);
-		}
-
-		@BatchTransactionManager
-		@Bean
-		PlatformTransactionManager batchTransactionManager() {
-			return mock(PlatformTransactionManager.class);
 		}
 
 	}
@@ -635,7 +574,6 @@ class BatchAutoConfigurationTests {
 					jobRegistry.register(getJobFactory());
 				}
 				catch (DuplicateJobException ex) {
-					// Ignore
 				}
 			}
 			return bean;
@@ -831,16 +769,6 @@ class BatchAutoConfigurationTests {
 		@Order(2)
 		BatchConversionServiceCustomizer anotherBatchConversionServiceCustomizer() {
 			return mock(BatchConversionServiceCustomizer.class);
-		}
-
-	}
-
-	@Configuration(proxyBeanMethods = false)
-	static class CustomExecutionContextConfiguration {
-
-		@Bean
-		ExecutionContextSerializer executionContextSerializer() {
-			return new Jackson2ExecutionContextStringSerializer();
 		}
 
 	}

@@ -92,12 +92,12 @@ class StringSequenceTests {
 
 	@Test
 	void isEmptyWhenEmptyShouldReturnTrue() {
-		assertThat(new StringSequence("")).isEmpty();
+		assertThat(new StringSequence("").isEmpty()).isTrue();
 	}
 
 	@Test
 	void isEmptyWhenNotEmptyShouldReturnFalse() {
-		assertThat(new StringSequence("x")).isNotEmpty();
+		assertThat(new StringSequence("x").isEmpty()).isFalse();
 	}
 
 	@Test

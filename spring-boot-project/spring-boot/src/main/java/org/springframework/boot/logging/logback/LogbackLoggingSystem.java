@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.springframework.boot.logging.logback;
 
-import java.io.PrintStream;
 import java.net.URL;
 import java.security.CodeSource;
 import java.security.ProtectionDomain;
@@ -39,7 +38,7 @@ import ch.qos.logback.core.status.OnConsoleStatusListener;
 import ch.qos.logback.core.status.Status;
 import ch.qos.logback.core.status.StatusUtil;
 import ch.qos.logback.core.util.StatusListenerConfigHelper;
-import ch.qos.logback.core.util.StatusPrinter2;
+import ch.qos.logback.core.util.StatusPrinter;
 import org.slf4j.ILoggerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,7 +50,6 @@ import org.springframework.aot.AotDetector;
 import org.springframework.beans.factory.aot.BeanFactoryInitializationAotContribution;
 import org.springframework.beans.factory.aot.BeanFactoryInitializationAotProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
-import org.springframework.boot.io.ApplicationResourceLoader;
 import org.springframework.boot.logging.AbstractLoggingSystem;
 import org.springframework.boot.logging.LogFile;
 import org.springframework.boot.logging.LogLevel;
@@ -64,9 +62,9 @@ import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.Environment;
-import org.springframework.core.io.Resource;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
+import org.springframework.util.ResourceUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -106,8 +104,6 @@ public class LogbackLoggingSystem extends AbstractLoggingSystem implements BeanF
 		}
 
 	};
-
-	private final StatusPrinter2 statusPrinter = new StatusPrinter2();
 
 	public LogbackLoggingSystem(ClassLoader classLoader) {
 		super(classLoader);
@@ -250,8 +246,7 @@ public class LogbackLoggingSystem extends AbstractLoggingSystem implements BeanF
 				applySystemProperties(initializationContext.getEnvironment(), logFile);
 			}
 			try {
-				Resource resource = new ApplicationResourceLoader().getResource(location);
-				configureByResourceUrl(initializationContext, loggerContext, resource.getURL());
+				configureByResourceUrl(initializationContext, loggerContext, ResourceUtils.getURL(location));
 			}
 			catch (Exception ex) {
 				throw new IllegalStateException("Could not initialize Logback logging from " + location, ex);
@@ -265,16 +260,16 @@ public class LogbackLoggingSystem extends AbstractLoggingSystem implements BeanF
 		List<Throwable> suppressedExceptions = new ArrayList<>();
 		for (Status status : loggerContext.getStatusManager().getCopyOfStatusList()) {
 			if (status.getLevel() == Status.ERROR) {
-				errors.append((!errors.isEmpty()) ? String.format("%n") : "");
-				errors.append(status);
+				errors.append((errors.length() > 0) ? String.format("%n") : "");
+				errors.append(status.toString());
 				if (status.getThrowable() != null) {
 					suppressedExceptions.add(status.getThrowable());
 				}
 			}
 		}
-		if (errors.isEmpty()) {
+		if (errors.length() == 0) {
 			if (!StatusUtil.contextHasStatusListener(loggerContext)) {
-				this.statusPrinter.printInCaseOfErrorsOrWarnings(loggerContext);
+				StatusPrinter.printInCaseOfErrorsOrWarnings(loggerContext);
 			}
 			return;
 		}
@@ -417,7 +412,7 @@ public class LogbackLoggingSystem extends AbstractLoggingSystem implements BeanF
 			}
 			catch (InterruptedException ex) {
 				Thread.currentThread().interrupt();
-				throw new IllegalStateException("Interrupted while waiting for non-substitute logger factory", ex);
+				throw new IllegalStateException("Interrupted while waiting for non-subtitute logger factory", ex);
 			}
 			factory = LoggerFactory.getILoggerFactory();
 		}
@@ -474,10 +469,6 @@ public class LogbackLoggingSystem extends AbstractLoggingSystem implements BeanF
 		finally {
 			turboFilters.remove(FILTER);
 		}
-	}
-
-	void setStatusPrinterStream(PrintStream stream) {
-		this.statusPrinter.setPrintStream(stream);
 	}
 
 	/**

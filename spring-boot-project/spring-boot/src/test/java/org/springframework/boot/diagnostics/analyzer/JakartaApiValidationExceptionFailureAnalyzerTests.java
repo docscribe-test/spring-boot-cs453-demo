@@ -25,7 +25,7 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.validation.annotation.Validated;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatException;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 /**
  * Tests for {@link ValidationExceptionFailureAnalyzer}
@@ -37,7 +37,8 @@ class JakartaApiValidationExceptionFailureAnalyzerTests {
 
 	@Test
 	void validatedPropertiesTest() {
-		assertThatException().isThrownBy(() -> new AnnotationConfigApplicationContext(TestConfiguration.class).close())
+		assertThatExceptionOfType(Exception.class)
+			.isThrownBy(() -> new AnnotationConfigApplicationContext(TestConfiguration.class).close())
 			.satisfies((ex) -> assertThat(new ValidationExceptionFailureAnalyzer().analyze(ex)).isNotNull());
 	}
 

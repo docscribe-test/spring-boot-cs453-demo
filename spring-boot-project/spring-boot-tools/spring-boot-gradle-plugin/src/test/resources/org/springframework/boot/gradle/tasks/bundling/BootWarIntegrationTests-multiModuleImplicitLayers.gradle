@@ -21,7 +21,7 @@ bootWar {
 
 repositories {
 	mavenCentral()
-	maven { url 'repository' }
+	maven { url "file:repository" }
 }
 
 dependencies {
@@ -34,12 +34,12 @@ dependencies {
 
 task listLayers(type: JavaExec) {
 	classpath = bootWar.outputs.files
-	systemProperties = [ "jarmode": "tools" ]
-	args "list-layers"
+	systemProperties = [ "jarmode": "layertools" ]
+	args "list"
 }
 
 task extractLayers(type: JavaExec) {
 	classpath = bootWar.outputs.files
-	systemProperties = [ "jarmode": "tools" ]
-	args "extract", "--layers", "--launcher", "--destination", ".", "--force"
+	systemProperties = [ "jarmode": "layertools" ]
+	args "extract"
 }

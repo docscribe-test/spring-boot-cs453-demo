@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,9 @@
 package org.springframework.boot.actuate.autoconfigure.metrics.export.prometheus;
 
 import java.time.Duration;
-import java.util.Map;
-import java.util.Properties;
 
-import io.micrometer.prometheusmetrics.PrometheusConfig;
+import io.micrometer.prometheus.HistogramFlavor;
+import io.micrometer.prometheus.PrometheusConfig;
 
 import org.springframework.boot.actuate.autoconfigure.metrics.export.properties.PropertiesConfigAdapter;
 
@@ -53,24 +52,13 @@ class PrometheusPropertiesConfigAdapter extends PropertiesConfigAdapter<Promethe
 	}
 
 	@Override
-	public Duration step() {
-		return get(PrometheusProperties::getStep, PrometheusConfig.super::step);
+	public HistogramFlavor histogramFlavor() {
+		return get(PrometheusProperties::getHistogramFlavor, PrometheusConfig.super::histogramFlavor);
 	}
 
 	@Override
-	public Properties prometheusProperties() {
-		return get(this::fromPropertiesMap, PrometheusConfig.super::prometheusProperties);
-	}
-
-	private Properties fromPropertiesMap(PrometheusProperties prometheusProperties) {
-		Map<String, String> map = prometheusProperties.getProperties();
-		if (map.isEmpty()) {
-			return null;
-		}
-		Properties properties = PrometheusConfig.super.prometheusProperties();
-		properties = (properties != null) ? properties : new Properties();
-		properties.putAll(map);
-		return properties;
+	public Duration step() {
+		return get(PrometheusProperties::getStep, PrometheusConfig.super::step);
 	}
 
 }

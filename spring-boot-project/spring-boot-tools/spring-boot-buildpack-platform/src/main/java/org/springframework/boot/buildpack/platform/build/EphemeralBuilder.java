@@ -25,7 +25,6 @@ import org.springframework.boot.buildpack.platform.docker.type.ImageReference;
 import org.springframework.boot.buildpack.platform.docker.type.Layer;
 import org.springframework.boot.buildpack.platform.io.Content;
 import org.springframework.boot.buildpack.platform.io.Owner;
-import org.springframework.util.CollectionUtils;
 
 /**
  * A short-lived builder that is created for each {@link Lifecycle} run.
@@ -67,7 +66,7 @@ class EphemeralBuilder {
 			update.withUpdatedConfig(this.builderMetadata::attachTo);
 			update.withUpdatedConfig((config) -> config.withLabel(BUILDER_FOR_LABEL_NAME, targetImage.toString()));
 			update.withTag(name);
-			if (!CollectionUtils.isEmpty(env)) {
+			if (env != null && !env.isEmpty()) {
 				update.withNewLayer(getEnvLayer(env));
 			}
 			if (buildpacks != null) {

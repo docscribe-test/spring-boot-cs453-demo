@@ -16,7 +16,6 @@
 
 package org.springframework.boot.task;
 
-import java.time.Duration;
 import java.util.Collections;
 import java.util.Set;
 
@@ -126,12 +125,6 @@ class SimpleAsyncTaskSchedulerBuilderTests {
 			.build();
 		then(customizer1).should().customize(scheduler);
 		then(customizer2).should().customize(scheduler);
-	}
-
-	@Test
-	void taskTerminationTimeoutShouldApply() {
-		SimpleAsyncTaskScheduler scheduler = this.builder.taskTerminationTimeout(Duration.ofSeconds(1)).build();
-		assertThat(scheduler).extracting("taskTerminationTimeout").isEqualTo(1000L);
 	}
 
 }

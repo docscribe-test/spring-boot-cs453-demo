@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,14 +49,11 @@ public class CheckSpringConfigurationMetadata extends DefaultTask {
 
 	private List<String> exclusions = new ArrayList<>();
 
-	private final File projectDir;
-
 	private final RegularFileProperty reportLocation;
 
 	private final RegularFileProperty metadataLocation;
 
 	public CheckSpringConfigurationMetadata() {
-		this.projectDir = getProject().getProjectDir();
 		this.metadataLocation = getProject().getObjects().fileProperty();
 		this.reportLocation = getProject().getObjects().fileProperty();
 	}
@@ -96,7 +93,7 @@ public class CheckSpringConfigurationMetadata extends DefaultTask {
 	private Report createReport() throws IOException, JsonParseException, JsonMappingException {
 		ObjectMapper objectMapper = new ObjectMapper();
 		File file = this.metadataLocation.get().getAsFile();
-		Report report = new Report(this.projectDir.toPath().relativize(file.toPath()));
+		Report report = new Report(getProject().getProjectDir().toPath().relativize(file.toPath()));
 		Map<String, Object> json = objectMapper.readValue(file, Map.class);
 		List<Map<String, Object>> properties = (List<Map<String, Object>>) json.get("properties");
 		for (Map<String, Object> property : properties) {

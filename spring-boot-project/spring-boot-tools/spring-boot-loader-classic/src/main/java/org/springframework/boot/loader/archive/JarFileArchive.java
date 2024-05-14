@@ -151,7 +151,6 @@ public class JarFileArchive implements Archive {
 				return unpackDirectory;
 			}
 			catch (IOException ex) {
-				// Ignore
 			}
 		}
 		throw new IllegalStateException("Failed to create unpack directory in directory '" + parent + "'");

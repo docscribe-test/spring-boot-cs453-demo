@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,8 +35,8 @@ import org.gradle.api.plugins.ApplicationPlugin;
 import org.gradle.api.plugins.JavaApplication;
 import org.gradle.api.tasks.TaskContainer;
 import org.gradle.api.tasks.TaskProvider;
-import org.gradle.api.tasks.application.CreateStartScripts;
 import org.gradle.jvm.application.scripts.TemplateBasedScriptGenerator;
+import org.gradle.jvm.application.tasks.CreateStartScripts;
 import org.gradle.util.GradleVersion;
 
 import org.springframework.boot.gradle.tasks.run.BootRun;
@@ -130,7 +130,7 @@ final class ApplicationPluginAction implements PluginApplicationAction {
 		if (GradleVersion.current().compareTo(GradleVersion.version("8.3")) >= 0) {
 			try {
 				Method filePermissions = copySpec.getClass().getMethod("filePermissions", Action.class);
-				filePermissions.invoke(copySpec, new Action<>() {
+				filePermissions.invoke(copySpec, new Action<Object>() {
 
 					@Override
 					public void execute(Object filePermissions) {

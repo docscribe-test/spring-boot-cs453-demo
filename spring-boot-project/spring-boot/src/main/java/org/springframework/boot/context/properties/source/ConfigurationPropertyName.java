@@ -493,7 +493,7 @@ public final class ConfigurationPropertyName implements Comparable<Configuration
 		}
 		int length = elements.getLength(element);
 		do {
-			char c = elements.charAt(element, index++);
+			char c = Character.toLowerCase(elements.charAt(element, index++));
 			if (c != '-') {
 				return false;
 			}
@@ -543,7 +543,7 @@ public final class ConfigurationPropertyName implements Comparable<Configuration
 		StringBuilder result = new StringBuilder(elements * 8);
 		for (int i = 0; i < elements; i++) {
 			boolean indexed = isIndexed(i);
-			if (!result.isEmpty() && !indexed) {
+			if (result.length() > 0 && !indexed) {
 				result.append('.');
 			}
 			if (indexed) {
@@ -615,7 +615,7 @@ public final class ConfigurationPropertyName implements Comparable<Configuration
 			Assert.isTrue(returnNullIfInvalid, "Name must not be null");
 			return null;
 		}
-		if (name.isEmpty()) {
+		if (name.length() == 0) {
 			return Elements.EMPTY;
 		}
 		if (name.charAt(0) == '.' || name.charAt(name.length() - 1) == '.') {
@@ -674,7 +674,7 @@ public final class ConfigurationPropertyName implements Comparable<Configuration
 	static ConfigurationPropertyName adapt(CharSequence name, char separator,
 			Function<CharSequence, CharSequence> elementValueProcessor) {
 		Assert.notNull(name, "Name must not be null");
-		if (name.isEmpty()) {
+		if (name.length() == 0) {
 			return EMPTY;
 		}
 		Elements elements = new ElementsParser(name, separator).parse(elementValueProcessor);

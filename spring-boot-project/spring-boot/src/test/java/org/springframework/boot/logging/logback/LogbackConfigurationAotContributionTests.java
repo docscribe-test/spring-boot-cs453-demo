@@ -185,7 +185,7 @@ class LogbackConfigurationAotContributionTests {
 	@Test
 	void componentTypesOfArraysAreRegisteredForReflection() {
 		ComponentModel component = new ComponentModel();
-		component.setClassName(ArrayParameters.class.getName());
+		component.setClassName(ArrayParmeters.class.getName());
 		TestGenerationContext generationContext = applyContribution(component);
 		assertThat(invokePublicConstructorsAndInspectAndInvokePublicMethodsOf(InetSocketAddress.class))
 			.accepts(generationContext.getRuntimeHints());
@@ -287,7 +287,7 @@ class LogbackConfigurationAotContributionTests {
 
 	}
 
-	public static class ArrayParameters {
+	public static class ArrayParmeters {
 
 		public void addDestinations(InetSocketAddress... addresses) {
 

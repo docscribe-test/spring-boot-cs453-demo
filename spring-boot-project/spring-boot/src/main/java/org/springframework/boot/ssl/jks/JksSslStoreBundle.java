@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,17 +18,16 @@ package org.springframework.boot.ssl.jks;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.cert.CertificateException;
 
-import org.springframework.boot.io.ApplicationResourceLoader;
 import org.springframework.boot.ssl.SslStoreBundle;
-import org.springframework.core.io.Resource;
-import org.springframework.core.style.ToStringCreator;
 import org.springframework.util.Assert;
+import org.springframework.util.ResourceUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -114,24 +113,14 @@ public class JksSslStoreBundle implements SslStoreBundle {
 	private void loadKeyStore(KeyStore store, String location, char[] password) {
 		Assert.state(StringUtils.hasText(location), () -> "Location must not be empty or null");
 		try {
-			Resource resource = new ApplicationResourceLoader().getResource(location);
-			try (InputStream stream = resource.getInputStream()) {
+			URL url = ResourceUtils.getURL(location);
+			try (InputStream stream = url.openStream()) {
 				store.load(stream, password);
 			}
 		}
 		catch (Exception ex) {
 			throw new IllegalStateException("Could not load store from '" + location + "'", ex);
 		}
-	}
-
-	@Override
-	public String toString() {
-		ToStringCreator creator = new ToStringCreator(this);
-		creator.append("keyStore.type", (this.keyStore != null) ? this.keyStore.getType() : "none");
-		String keyStorePassword = getKeyStorePassword();
-		creator.append("keyStorePassword", (keyStorePassword != null) ? "******" : null);
-		creator.append("trustStore.type", (this.trustStore != null) ? this.trustStore.getType() : "none");
-		return creator.toString();
 	}
 
 }

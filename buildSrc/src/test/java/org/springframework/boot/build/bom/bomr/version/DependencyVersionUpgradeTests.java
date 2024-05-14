@@ -40,7 +40,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * @author Andy Wilkinson
  */
-class DependencyVersionUpgradeTests {
+public class DependencyVersionUpgradeTests {
 
 	@ParameterizedTest
 	@ArtifactVersion(current = "1.2.3", candidate = "1.2.3")
@@ -244,7 +244,7 @@ class DependencyVersionUpgradeTests {
 	static class InputProvider implements ArgumentsProvider {
 
 		@Override
-		public Stream<? extends Arguments> provideArguments(ExtensionContext context) {
+		public Stream<? extends Arguments> provideArguments(ExtensionContext context) throws Exception {
 			Method testMethod = context.getRequiredTestMethod();
 			Stream<Arguments> artifactVersions = artifactVersions(testMethod)
 				.map((artifactVersion) -> Arguments.of(VersionType.ARTIFACT_VERSION.parse(artifactVersion.current()),

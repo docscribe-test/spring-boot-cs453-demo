@@ -18,6 +18,8 @@ package org.springframework.boot.json;
 
 import java.io.IOException;
 
+import org.junit.jupiter.api.Disabled;
+
 /**
  * Tests for {@link GsonJsonParser}.
  *
@@ -31,8 +33,9 @@ class GsonJsonParserTests extends AbstractJsonParserTests {
 	}
 
 	@Override
+	@Disabled("Gson does not protect against deeply nested JSON")
 	void listWithRepeatedOpenArray() throws IOException {
-		// Gson does not protect against deeply nested JSON
+		super.listWithRepeatedOpenArray();
 	}
 
 }

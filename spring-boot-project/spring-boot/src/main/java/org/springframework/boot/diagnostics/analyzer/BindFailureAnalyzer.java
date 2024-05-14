@@ -49,20 +49,15 @@ class BindFailureAnalyzer extends AbstractFailureAnalyzer<BindException> {
 				|| rootCause instanceof UnboundConfigurationPropertiesException) {
 			return null;
 		}
-		return analyzeGenericBindException(rootFailure, cause);
+		return analyzeGenericBindException(cause);
 	}
 
-	private FailureAnalysis analyzeGenericBindException(Throwable rootFailure, BindException cause) {
-		FailureAnalysis missingParametersAnalysis = MissingParameterNamesFailureAnalyzer
-			.analyzeForMissingParameters(rootFailure);
+	private FailureAnalysis analyzeGenericBindException(BindException cause) {
 		StringBuilder description = new StringBuilder(String.format("%s:%n", cause.getMessage()));
 		ConfigurationProperty property = cause.getProperty();
 		buildDescription(description, property);
 		description.append(String.format("%n    Reason: %s", getMessage(cause)));
-		if (missingParametersAnalysis != null) {
-			MissingParameterNamesFailureAnalyzer.appendPossibility(description);
-		}
-		return getFailureAnalysis(description.toString(), cause, missingParametersAnalysis);
+		return getFailureAnalysis(description, cause);
 	}
 
 	private void buildDescription(StringBuilder description, ConfigurationProperty property) {
@@ -103,18 +98,14 @@ class BindFailureAnalyzer extends AbstractFailureAnalyzer<BindException> {
 		return ex.getClass().getName() + (StringUtils.hasText(message) ? ": " + message : "");
 	}
 
-	private FailureAnalysis getFailureAnalysis(String description, BindException cause,
-			FailureAnalysis missingParametersAnalysis) {
-		StringBuilder action = new StringBuilder("Update your application's configuration");
+	private FailureAnalysis getFailureAnalysis(Object description, BindException cause) {
+		StringBuilder message = new StringBuilder("Update your application's configuration");
 		Collection<String> validValues = findValidValues(cause);
 		if (!validValues.isEmpty()) {
-			action.append(String.format(". The following values are valid:%n"));
-			validValues.forEach((value) -> action.append(String.format("%n    %s", value)));
+			message.append(String.format(". The following values are valid:%n"));
+			validValues.forEach((value) -> message.append(String.format("%n    %s", value)));
 		}
-		if (missingParametersAnalysis != null) {
-			action.append(String.format("%n%n%s", missingParametersAnalysis.getAction()));
-		}
-		return new FailureAnalysis(description, action.toString(), cause);
+		return new FailureAnalysis(description.toString(), message.toString(), cause);
 	}
 
 	private Collection<String> findValidValues(BindException ex) {

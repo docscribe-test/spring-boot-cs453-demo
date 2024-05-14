@@ -30,11 +30,11 @@ bom {
 	library("C3P0", "0.9.5.5") {
 		group("com.mchange") {
 			modules = [
-				"c3p0"
+					"c3p0"
 			]
 		}
 	}
-	library("Commons Compress", "1.25.0") {
+	library("Commons Compress", "1.23.0") {
 		group("org.apache.commons") {
 			modules = [
 				"commons-compress"
@@ -48,10 +48,10 @@ bom {
 			]
 		}
 	}
-	library("CycloneDX Gradle Plugin", "1.8.2") {
-		group("org.cyclonedx") {
+	library("Jakarta Inject", "2.0.1") {
+		group("jakarta.inject") {
 			modules = [
-				"cyclonedx-gradle-plugin"
+				"jakarta.inject-api"
 			]
 		}
 	}
@@ -141,7 +141,7 @@ bom {
 	library("Micrometer Context Propagation", "1.0.5") {
 		group("io.micrometer") {
 			modules = [
-				"context-propagation"
+					"context-propagation"
 			]
 		}
 	}
@@ -198,6 +198,14 @@ bom {
 		group("org.testng") {
 			modules = [
 				"testng"
+			]
+		}
+	}
+	library("Spring Asciidoctor Extensions", "0.6.2") {
+		group("io.spring.asciidoctor") {
+			modules = [
+				"spring-asciidoctor-extensions-spring-boot",
+				"spring-asciidoctor-extensions-section-ids"
 			]
 		}
 	}

@@ -23,7 +23,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnThreading;
 import org.springframework.boot.autoconfigure.thread.Threading;
-import org.springframework.boot.ssl.SslBundles;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
@@ -54,8 +53,6 @@ import org.springframework.kafka.transaction.KafkaAwareTransactionManager;
  * @author Eddú Meléndez
  * @author Thomas Kåsene
  * @author Moritz Halbritter
- * @author Andy Wilkinson
- * @author Scott Frederick
  */
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnClass(EnableKafka.class)
@@ -152,11 +149,10 @@ class KafkaAnnotationDrivenConfiguration {
 	ConcurrentKafkaListenerContainerFactory<?, ?> kafkaListenerContainerFactory(
 			ConcurrentKafkaListenerContainerFactoryConfigurer configurer,
 			ObjectProvider<ConsumerFactory<Object, Object>> kafkaConsumerFactory,
-			ObjectProvider<ContainerCustomizer<Object, Object, ConcurrentMessageListenerContainer<Object, Object>>> kafkaContainerCustomizer,
-			ObjectProvider<SslBundles> sslBundles) {
+			ObjectProvider<ContainerCustomizer<Object, Object, ConcurrentMessageListenerContainer<Object, Object>>> kafkaContainerCustomizer) {
 		ConcurrentKafkaListenerContainerFactory<Object, Object> factory = new ConcurrentKafkaListenerContainerFactory<>();
-		configurer.configure(factory, kafkaConsumerFactory.getIfAvailable(() -> new DefaultKafkaConsumerFactory<>(
-				this.properties.buildConsumerProperties(sslBundles.getIfAvailable()))));
+		configurer.configure(factory, kafkaConsumerFactory
+			.getIfAvailable(() -> new DefaultKafkaConsumerFactory<>(this.properties.buildConsumerProperties())));
 		kafkaContainerCustomizer.ifAvailable(factory::setContainerCustomizer);
 		return factory;
 	}

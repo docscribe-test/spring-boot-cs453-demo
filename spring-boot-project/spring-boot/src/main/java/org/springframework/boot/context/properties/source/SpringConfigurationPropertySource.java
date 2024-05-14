@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -89,7 +89,6 @@ class SpringConfigurationPropertySource implements ConfigurationPropertySource {
 				}
 			}
 			catch (Exception ex) {
-				// Ignore
 			}
 		}
 		return null;
@@ -167,10 +166,10 @@ class SpringConfigurationPropertySource implements ConfigurationPropertySource {
 
 	private static boolean isFullEnumerable(PropertySource<?> source) {
 		PropertySource<?> rootSource = getRootSource(source);
-		if (rootSource.getSource() instanceof Map<?, ?> map) {
+		if (rootSource.getSource() instanceof Map) {
 			// Check we're not security restricted
 			try {
-				map.size();
+				((Map<?, ?>) rootSource.getSource()).size();
 			}
 			catch (UnsupportedOperationException ex) {
 				return false;
@@ -180,8 +179,8 @@ class SpringConfigurationPropertySource implements ConfigurationPropertySource {
 	}
 
 	private static PropertySource<?> getRootSource(PropertySource<?> source) {
-		while (source.getSource() != null && source.getSource() instanceof PropertySource<?> propertySource) {
-			source = propertySource;
+		while (source.getSource() != null && source.getSource() instanceof PropertySource) {
+			source = (PropertySource<?>) source.getSource();
 		}
 		return source;
 	}

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,6 @@ import org.springframework.web.servlet.ModelAndView;
  * @author Michael Stummvoll
  * @author Stephane Nicoll
  * @author Scott Frederick
- * @author Moritz Halbritter
  * @since 1.0.0
  * @see ErrorAttributes
  * @see ErrorProperties
@@ -122,7 +121,6 @@ public class BasicErrorController extends AbstractErrorController {
 		if (isIncludeBindingErrors(request, mediaType)) {
 			options = options.including(Include.BINDING_ERRORS);
 		}
-		options = isIncludePath(request, mediaType) ? options.including(Include.PATH) : options.excluding(Include.PATH);
 		return options;
 	}
 
@@ -136,7 +134,7 @@ public class BasicErrorController extends AbstractErrorController {
 		return switch (getErrorProperties().getIncludeStacktrace()) {
 			case ALWAYS -> true;
 			case ON_PARAM -> getTraceParameter(request);
-			case NEVER -> false;
+			default -> false;
 		};
 	}
 
@@ -150,7 +148,7 @@ public class BasicErrorController extends AbstractErrorController {
 		return switch (getErrorProperties().getIncludeMessage()) {
 			case ALWAYS -> true;
 			case ON_PARAM -> getMessageParameter(request);
-			case NEVER -> false;
+			default -> false;
 		};
 	}
 
@@ -164,22 +162,7 @@ public class BasicErrorController extends AbstractErrorController {
 		return switch (getErrorProperties().getIncludeBindingErrors()) {
 			case ALWAYS -> true;
 			case ON_PARAM -> getErrorsParameter(request);
-			case NEVER -> false;
-		};
-	}
-
-	/**
-	 * Determine if the path attribute should be included.
-	 * @param request the source request
-	 * @param produces the media type produced (or {@code MediaType.ALL})
-	 * @return if the path attribute should be included
-	 * @since 3.3.0
-	 */
-	protected boolean isIncludePath(HttpServletRequest request, MediaType produces) {
-		return switch (getErrorProperties().getIncludePath()) {
-			case ALWAYS -> true;
-			case ON_PARAM -> getPathParameter(request);
-			case NEVER -> false;
+			default -> false;
 		};
 	}
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,14 +18,11 @@ package org.springframework.boot.loader.net.protocol.nested;
 
 import java.io.File;
 import java.io.FilePermission;
-import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.Cleaner.Cleanable;
+import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
 import java.security.Permission;
-import java.time.Instant;
-import java.time.temporal.ChronoField;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,6 +37,7 @@ import org.springframework.boot.loader.zip.AssertFileChannelDataBlocksClosed;
 import org.springframework.boot.loader.zip.ZipContent;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
@@ -70,6 +68,13 @@ class NestedUrlConnectionTests {
 		this.jarFile = new File(this.temp, "test.jar");
 		TestJar.create(this.jarFile);
 		this.url = new URL("nested:" + this.jarFile.getAbsolutePath() + "/!nested.jar");
+	}
+
+	@Test
+	void createWhenMalformedUrlThrowsException() throws Exception {
+		URL url = new URL("nested:bad.jar");
+		assertThatExceptionOfType(MalformedURLException.class).isThrownBy(() -> new NestedUrlConnection(url))
+			.withMessage("'path' must contain '/!'");
 	}
 
 	@Test
@@ -121,7 +126,13 @@ class NestedUrlConnectionTests {
 	@Test
 	void getInputStreamReturnsContentOfNestedJar() throws Exception {
 		NestedUrlConnection connection = new NestedUrlConnection(this.url);
-		assertHasSameContentAsNestedJar(connection);
+		try (InputStream actual = connection.getInputStream()) {
+			try (ZipContent zipContent = ZipContent.open(this.jarFile.toPath())) {
+				try (InputStream expected = zipContent.getEntry("nested.jar").openContent().asInputStream()) {
+					assertThat(actual).hasSameContentAs(expected);
+				}
+			}
+		}
 	}
 
 	@Test
@@ -135,53 +146,6 @@ class NestedUrlConnectionTests {
 		ArgumentCaptor<Runnable> actionCaptor = ArgumentCaptor.forClass(Runnable.class);
 		then(cleaner).should().register(any(), actionCaptor.capture());
 		actionCaptor.getValue().run();
-	}
-
-	@Test // gh-38204
-	void getLastModifiedReturnsFileModifiedTime() throws Exception {
-		NestedUrlConnection connection = new NestedUrlConnection(this.url);
-		assertThat(connection.getLastModified()).isEqualTo(this.jarFile.lastModified());
-	}
-
-	@Test // gh-38204
-	void getLastModifiedHeaderReturnsFileModifiedTime() throws IOException {
-		NestedUrlConnection connection = new NestedUrlConnection(this.url);
-		URLConnection fileConnection = this.jarFile.toURI().toURL().openConnection();
-		try {
-			assertThat(connection.getHeaderFieldDate("last-modified", 0))
-				.isEqualTo(withoutNanos(this.jarFile.lastModified()))
-				.isEqualTo(fileConnection.getHeaderFieldDate("last-modified", 0));
-		}
-		finally {
-			fileConnection.getInputStream().close();
-		}
-	}
-
-	@Test
-	void createDecodesUrlPath() throws Exception {
-		File withSpace = new File(this.temp, "te st");
-		withSpace.mkdirs();
-		this.jarFile = new File(withSpace, "test.jar");
-		TestJar.create(this.jarFile);
-		this.url = new URL("nested:" + this.jarFile.toURI().getRawPath() + "/!nested.jar");
-		assertThat(this.url.toString()).contains("%20");
-		NestedUrlConnection connection = new NestedUrlConnection(this.url);
-		assertHasSameContentAsNestedJar(connection);
-		assertThat(connection.getLastModified()).isEqualTo(this.jarFile.lastModified());
-	}
-
-	private void assertHasSameContentAsNestedJar(NestedUrlConnection connection) throws IOException {
-		try (InputStream actual = connection.getInputStream()) {
-			try (ZipContent zipContent = ZipContent.open(this.jarFile.toPath())) {
-				try (InputStream expected = zipContent.getEntry("nested.jar").openContent().asInputStream()) {
-					assertThat(actual).hasSameContentAs(expected);
-				}
-			}
-		}
-	}
-
-	private long withoutNanos(long epochMilli) {
-		return Instant.ofEpochMilli(epochMilli).with(ChronoField.NANO_OF_SECOND, 0).toEpochMilli();
 	}
 
 }

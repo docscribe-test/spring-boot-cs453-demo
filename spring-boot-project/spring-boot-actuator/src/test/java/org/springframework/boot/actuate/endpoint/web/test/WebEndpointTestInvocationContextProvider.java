@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,6 @@ import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolver;
 import org.junit.jupiter.api.extension.TestTemplateInvocationContext;
 import org.junit.jupiter.api.extension.TestTemplateInvocationContextProvider;
-import org.junit.platform.commons.util.AnnotationUtils;
 
 import org.springframework.boot.actuate.endpoint.invoke.convert.ConversionServiceParameterValueMapper;
 import org.springframework.boot.actuate.endpoint.web.EndpointLinksResolver;
@@ -46,7 +45,6 @@ import org.springframework.boot.actuate.endpoint.web.annotation.WebEndpointDisco
 import org.springframework.boot.actuate.endpoint.web.jersey.JerseyEndpointResourceFactory;
 import org.springframework.boot.actuate.endpoint.web.reactive.WebFluxEndpointHandlerMapping;
 import org.springframework.boot.actuate.endpoint.web.servlet.WebMvcEndpointHandlerMapping;
-import org.springframework.boot.actuate.endpoint.web.test.WebEndpointTest.Infrastructure;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.http.HttpMessageConvertersAutoConfiguration;
 import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
@@ -93,14 +91,16 @@ class WebEndpointTestInvocationContextProvider implements TestTemplateInvocation
 	@Override
 	public Stream<TestTemplateInvocationContext> provideTestTemplateInvocationContexts(
 			ExtensionContext extensionContext) {
-		WebEndpointTest webEndpointTest = AnnotationUtils
-			.findAnnotation(extensionContext.getRequiredTestMethod(), WebEndpointTest.class)
-			.orElseThrow(() -> new IllegalStateException("Unable to find WebEndpointTest annotation on %s"
-				.formatted(extensionContext.getRequiredTestMethod())));
-		return Stream.of(webEndpointTest.infrastructure()).distinct().map(Infrastructure::createInvocationContext);
+		return Stream.of(
+				new WebEndpointsInvocationContext("Jersey",
+						WebEndpointTestInvocationContextProvider::createJerseyContext),
+				new WebEndpointsInvocationContext("WebMvc",
+						WebEndpointTestInvocationContextProvider::createWebMvcContext),
+				new WebEndpointsInvocationContext("WebFlux",
+						WebEndpointTestInvocationContextProvider::createWebFluxContext));
 	}
 
-	static ConfigurableApplicationContext createJerseyContext(List<Class<?>> classes) {
+	private static ConfigurableApplicationContext createJerseyContext(List<Class<?>> classes) {
 		AnnotationConfigServletWebServerApplicationContext context = new AnnotationConfigServletWebServerApplicationContext();
 		classes.add(JerseyEndpointConfiguration.class);
 		context.register(ClassUtils.toClassArray(classes));
@@ -108,7 +108,7 @@ class WebEndpointTestInvocationContextProvider implements TestTemplateInvocation
 		return context;
 	}
 
-	static ConfigurableApplicationContext createWebMvcContext(List<Class<?>> classes) {
+	private static ConfigurableApplicationContext createWebMvcContext(List<Class<?>> classes) {
 		AnnotationConfigServletWebServerApplicationContext context = new AnnotationConfigServletWebServerApplicationContext();
 		classes.add(WebMvcEndpointConfiguration.class);
 		context.register(ClassUtils.toClassArray(classes));
@@ -116,7 +116,7 @@ class WebEndpointTestInvocationContextProvider implements TestTemplateInvocation
 		return context;
 	}
 
-	static ConfigurableApplicationContext createWebFluxContext(List<Class<?>> classes) {
+	private static ConfigurableApplicationContext createWebFluxContext(List<Class<?>> classes) {
 		AnnotationConfigReactiveWebServerApplicationContext context = new AnnotationConfigReactiveWebServerApplicationContext();
 		classes.add(WebFluxEndpointConfiguration.class);
 		context.register(ClassUtils.toClassArray(classes));

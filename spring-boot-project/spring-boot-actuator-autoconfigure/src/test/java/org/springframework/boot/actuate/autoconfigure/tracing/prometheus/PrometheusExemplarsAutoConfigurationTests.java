@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,9 +22,9 @@ import java.util.regex.Pattern;
 
 import io.micrometer.observation.Observation;
 import io.micrometer.observation.ObservationRegistry;
-import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
-import io.prometheus.metrics.expositionformats.OpenMetricsTextFormatWriter;
-import io.prometheus.metrics.tracer.common.SpanContext;
+import io.micrometer.prometheus.PrometheusMeterRegistry;
+import io.prometheus.client.exemplars.tracer.common.SpanContextSupplier;
+import io.prometheus.client.exporter.common.TextFormat;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.actuate.autoconfigure.metrics.export.prometheus.PrometheusMetricsExportAutoConfiguration;
@@ -50,10 +50,10 @@ import static org.mockito.Mockito.mock;
 class PrometheusExemplarsAutoConfigurationTests {
 
 	private static final Pattern BUCKET_TRACE_INFO_PATTERN = Pattern.compile(
-			"^test_observation_seconds_bucket\\{error=\"none\",le=\".+\"} 1 # \\{span_id=\"(\\p{XDigit}+)\",trace_id=\"(\\p{XDigit}+)\"} .+$");
+			"^test_observation_seconds_bucket\\{error=\"none\",le=\".+\"} 1.0 # \\{span_id=\"(\\p{XDigit}+)\",trace_id=\"(\\p{XDigit}+)\"} .+$");
 
-	private static final Pattern COUNT_TRACE_INFO_PATTERN = Pattern.compile(
-			"^test_observation_seconds_count\\{error=\"none\"} 1 # \\{span_id=\"(\\p{XDigit}+)\",trace_id=\"(\\p{XDigit}+)\"} .+$");
+	private static final Pattern COUNTER_TRACE_INFO_PATTERN = Pattern.compile(
+			"^test_observation_seconds_count\\{error=\"none\"} 1.0 # \\{span_id=\"(\\p{XDigit}+)\",trace_id=\"(\\p{XDigit}+)\"} .+$");
 
 	private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
 		.withPropertyValues("management.tracing.sampling.probability=1.0",
@@ -65,59 +65,32 @@ class PrometheusExemplarsAutoConfigurationTests {
 
 	@Test
 	void shouldNotSupplyBeansIfPrometheusSupportIsMissing() {
-		this.contextRunner.withClassLoader(new FilteredClassLoader("io.prometheus.metrics.tracer"))
-			.run((context) -> assertThat(context).doesNotHaveBean(SpanContext.class));
+		this.contextRunner.withClassLoader(new FilteredClassLoader("io.prometheus.client.exemplars"))
+			.run((context) -> assertThat(context).doesNotHaveBean(SpanContextSupplier.class));
 	}
 
 	@Test
 	void shouldNotSupplyBeansIfMicrometerTracingIsMissing() {
 		this.contextRunner.withClassLoader(new FilteredClassLoader("io.micrometer.tracing"))
-			.run((context) -> assertThat(context).doesNotHaveBean(SpanContext.class));
+			.run((context) -> assertThat(context).doesNotHaveBean(SpanContextSupplier.class));
 	}
 
 	@Test
 	void shouldSupplyCustomBeans() {
 		this.contextRunner.withUserConfiguration(CustomConfiguration.class)
-			.run((context) -> assertThat(context).hasSingleBean(SpanContext.class)
-				.getBean(SpanContext.class)
+			.run((context) -> assertThat(context).hasSingleBean(SpanContextSupplier.class)
+				.getBean(SpanContextSupplier.class)
 				.isSameAs(CustomConfiguration.SUPPLIER));
-	}
-
-	@Test
-	void prometheusOpenMetricsOutputWithoutExemplarsOnHistogramCount() {
-		this.contextRunner.withPropertyValues(
-				"management.prometheus.metrics.export.properties.io.prometheus.exporter.exemplarsOnAllMetricTypes=false")
-			.run((context) -> {
-				assertThat(context).hasSingleBean(SpanContext.class);
-				ObservationRegistry observationRegistry = context.getBean(ObservationRegistry.class);
-				Observation.start("test.observation", observationRegistry).stop();
-				PrometheusMeterRegistry prometheusMeterRegistry = context.getBean(PrometheusMeterRegistry.class);
-				String openMetricsOutput = prometheusMeterRegistry.scrape(OpenMetricsTextFormatWriter.CONTENT_TYPE);
-
-				assertThat(openMetricsOutput).contains("test_observation_seconds_bucket");
-				assertThat(openMetricsOutput).containsOnlyOnce("test_observation_seconds_count");
-				assertThat(StringUtils.countOccurrencesOf(openMetricsOutput, "span_id")).isEqualTo(1);
-				assertThat(StringUtils.countOccurrencesOf(openMetricsOutput, "trace_id")).isEqualTo(1);
-
-				Optional<TraceInfo> bucketTraceInfo = openMetricsOutput.lines()
-					.filter((line) -> line.contains("test_observation_seconds_bucket") && line.contains("span_id"))
-					.map(BUCKET_TRACE_INFO_PATTERN::matcher)
-					.flatMap(Matcher::results)
-					.map((matchResult) -> new TraceInfo(matchResult.group(2), matchResult.group(1)))
-					.findFirst();
-
-				assertThat(bucketTraceInfo).isNotEmpty();
-			});
 	}
 
 	@Test
 	void prometheusOpenMetricsOutputShouldContainExemplars() {
 		this.contextRunner.run((context) -> {
-			assertThat(context).hasSingleBean(SpanContext.class);
+			assertThat(context).hasSingleBean(SpanContextSupplier.class);
 			ObservationRegistry observationRegistry = context.getBean(ObservationRegistry.class);
 			Observation.start("test.observation", observationRegistry).stop();
 			PrometheusMeterRegistry prometheusMeterRegistry = context.getBean(PrometheusMeterRegistry.class);
-			String openMetricsOutput = prometheusMeterRegistry.scrape(OpenMetricsTextFormatWriter.CONTENT_TYPE);
+			String openMetricsOutput = prometheusMeterRegistry.scrape(TextFormat.CONTENT_TYPE_OPENMETRICS_100);
 
 			assertThat(openMetricsOutput).contains("test_observation_seconds_bucket");
 			assertThat(openMetricsOutput).containsOnlyOnce("test_observation_seconds_count");
@@ -133,7 +106,7 @@ class PrometheusExemplarsAutoConfigurationTests {
 
 			Optional<TraceInfo> counterTraceInfo = openMetricsOutput.lines()
 				.filter((line) -> line.contains("test_observation_seconds_count") && line.contains("span_id"))
-				.map(COUNT_TRACE_INFO_PATTERN::matcher)
+				.map(COUNTER_TRACE_INFO_PATTERN::matcher)
 				.flatMap(Matcher::results)
 				.map((matchResult) -> new TraceInfo(matchResult.group(2), matchResult.group(1)))
 				.findFirst();
@@ -143,12 +116,12 @@ class PrometheusExemplarsAutoConfigurationTests {
 	}
 
 	@Configuration(proxyBeanMethods = false)
-	private static final class CustomConfiguration {
+	private static class CustomConfiguration {
 
-		static final SpanContext SUPPLIER = mock(SpanContext.class);
+		static final SpanContextSupplier SUPPLIER = mock(SpanContextSupplier.class);
 
 		@Bean
-		SpanContext customSpanContext() {
+		SpanContextSupplier customSpanContextSupplier() {
 			return SUPPLIER;
 		}
 

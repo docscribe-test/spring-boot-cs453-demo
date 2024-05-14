@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,7 +81,10 @@ public class HelpCommand extends AbstractCommand {
 	}
 
 	private boolean isHelpShown(Command command) {
-		return !(command instanceof HelpCommand) && !(command instanceof HintCommand);
+		if (command instanceof HelpCommand || command instanceof HintCommand) {
+			return false;
+		}
+		return true;
 	}
 
 	@Override

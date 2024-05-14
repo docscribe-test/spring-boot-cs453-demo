@@ -52,8 +52,6 @@ import org.springframework.util.StringUtils;
 public class ServerPortInfoApplicationContextInitializer implements
 		ApplicationContextInitializer<ConfigurableApplicationContext>, ApplicationListener<WebServerInitializedEvent> {
 
-	private static final String PROPERTY_SOURCE_NAME = "server.ports";
-
 	@Override
 	public void initialize(ConfigurableApplicationContext applicationContext) {
 		applicationContext.addApplicationListener(this);
@@ -82,9 +80,9 @@ public class ServerPortInfoApplicationContextInitializer implements
 	@SuppressWarnings("unchecked")
 	private void setPortProperty(ConfigurableEnvironment environment, String propertyName, int port) {
 		MutablePropertySources sources = environment.getPropertySources();
-		PropertySource<?> source = sources.get(PROPERTY_SOURCE_NAME);
+		PropertySource<?> source = sources.get("server.ports");
 		if (source == null) {
-			source = new MapPropertySource(PROPERTY_SOURCE_NAME, new HashMap<>());
+			source = new MapPropertySource("server.ports", new HashMap<>());
 			sources.addFirst(source);
 		}
 		((Map<String, Object>) source.getSource()).put(propertyName, port);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Consumer;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
@@ -36,7 +35,6 @@ import org.springframework.boot.configurationprocessor.metadata.ItemMetadata;
  *
  * @author Andy Wilkinson
  * @author Kris De Volder
- * @author Moritz Halbritter
  * @since 1.2.2
  */
 public class MetadataCollector {
@@ -78,24 +76,6 @@ public class MetadataCollector {
 		this.metadataItems.add(metadata);
 	}
 
-	public void add(ItemMetadata metadata, Consumer<ItemMetadata> onConflict) {
-		ItemMetadata existing = find(metadata.getName());
-		if (existing != null) {
-			onConflict.accept(existing);
-			return;
-		}
-		add(metadata);
-	}
-
-	public boolean addIfAbsent(ItemMetadata metadata) {
-		ItemMetadata existing = find(metadata.getName());
-		if (existing != null) {
-			return false;
-		}
-		add(metadata);
-		return true;
-	}
-
 	public boolean hasSimilarGroup(ItemMetadata metadata) {
 		if (!metadata.isOfItemType(ItemMetadata.ItemType.GROUP)) {
 			throw new IllegalStateException("item " + metadata + " must be a group");
@@ -123,13 +103,6 @@ public class MetadataCollector {
 			}
 		}
 		return metadata;
-	}
-
-	private ItemMetadata find(String name) {
-		return this.metadataItems.stream()
-			.filter((candidate) -> name.equals(candidate.getName()))
-			.findFirst()
-			.orElse(null);
 	}
 
 	private boolean shouldBeMerged(ItemMetadata itemMetadata) {

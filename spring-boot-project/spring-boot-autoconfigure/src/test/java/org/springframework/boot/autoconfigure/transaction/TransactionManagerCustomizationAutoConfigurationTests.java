@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package org.springframework.boot.autoconfigure.transaction;
 
 import java.util.Collections;
 
-import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.autoconfigure.AutoConfigurations;
@@ -43,7 +42,7 @@ class TransactionManagerCustomizationAutoConfigurationTests {
 		this.contextRunner.run((context) -> {
 			TransactionManagerCustomizers customizers = context.getBean(TransactionManagerCustomizers.class);
 			assertThat(customizers).extracting("customizers")
-				.asInstanceOf(InstanceOfAssertFactories.LIST)
+				.asList()
 				.hasSize(2)
 				.hasAtLeastOneElementOfType(TransactionProperties.class)
 				.hasAtLeastOneElementOfType(ExecutionListenersTransactionManagerCustomizer.class);
@@ -55,9 +54,7 @@ class TransactionManagerCustomizationAutoConfigurationTests {
 		this.contextRunner.withUserConfiguration(CustomTransactionManagerCustomizersConfiguration.class)
 			.run((context) -> {
 				TransactionManagerCustomizers customizers = context.getBean(TransactionManagerCustomizers.class);
-				assertThat(customizers).extracting("customizers")
-					.asInstanceOf(InstanceOfAssertFactories.LIST)
-					.isEmpty();
+				assertThat(customizers).extracting("customizers").asList().isEmpty();
 			});
 	}
 

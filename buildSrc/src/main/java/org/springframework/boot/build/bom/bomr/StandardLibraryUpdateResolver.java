@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.SortedSet;
 import java.util.function.BiPredicate;
 
@@ -32,7 +31,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.build.bom.Library;
 import org.springframework.boot.build.bom.Library.Group;
 import org.springframework.boot.build.bom.Library.Module;
-import org.springframework.boot.build.bom.Library.VersionAlignment;
 import org.springframework.boot.build.bom.bomr.version.DependencyVersion;
 
 /**
@@ -65,7 +63,7 @@ class StandardLibraryUpdateResolver implements LibraryUpdateResolver {
 			}
 			LOGGER.info("Looking for updates for {}", library.getName());
 			long start = System.nanoTime();
-			List<VersionOption> versionOptions = getVersionOptions(library);
+			List<VersionOption> versionOptions = getVersionOptions(library, librariesByName);
 			result.add(new LibraryWithVersionOptions(library, versionOptions));
 			LOGGER.info("Found {} updates for {}, took {}", versionOptions.size(), library.getName(),
 					Duration.ofNanos(System.nanoTime() - start));
@@ -77,23 +75,8 @@ class StandardLibraryUpdateResolver implements LibraryUpdateResolver {
 		return library.getName().equals("Spring Boot");
 	}
 
-	protected List<VersionOption> getVersionOptions(Library library) {
-		VersionOption option = determineAlignedVersionOption(library);
-		return (option != null) ? List.of(option) : determineResolvedVersionOptions(library);
-	}
-
-	private VersionOption determineAlignedVersionOption(Library library) {
-		VersionAlignment versionAlignment = library.getVersionAlignment();
-		if (versionAlignment != null) {
-			Set<String> alignedVersions = versionAlignment.resolve();
-			if (alignedVersions != null && alignedVersions.size() == 1) {
-				DependencyVersion alignedVersion = DependencyVersion.parse(alignedVersions.iterator().next());
-				if (!alignedVersion.equals(library.getVersion().getVersion())) {
-					return new VersionOption.AlignedVersionOption(alignedVersion, versionAlignment);
-				}
-			}
-		}
-		return null;
+	protected List<VersionOption> getVersionOptions(Library library, Map<String, Library> libraries) {
+		return determineResolvedVersionOptions(library);
 	}
 
 	private List<VersionOption> determineResolvedVersionOptions(Library library) {

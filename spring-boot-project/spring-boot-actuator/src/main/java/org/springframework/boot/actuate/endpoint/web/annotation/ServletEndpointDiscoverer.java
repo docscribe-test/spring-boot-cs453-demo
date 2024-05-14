@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import org.springframework.boot.actuate.endpoint.invoke.OperationInvoker;
 import org.springframework.boot.actuate.endpoint.invoke.ParameterValueMapper;
 import org.springframework.boot.actuate.endpoint.web.ExposableServletEndpoint;
 import org.springframework.boot.actuate.endpoint.web.PathMapper;
+import org.springframework.boot.actuate.endpoint.web.annotation.ServletEndpointDiscoverer.ServletEndpointDiscovererRuntimeHints;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.ImportRuntimeHints;
 import org.springframework.core.annotation.MergedAnnotations;
@@ -42,11 +43,8 @@ import org.springframework.core.annotation.MergedAnnotations.SearchStrategy;
  *
  * @author Phillip Webb
  * @since 2.0.0
- * @deprecated since 3.3.0 in favor of {@code @Endpoint} and {@code @WebEndpoint}
  */
-@ImportRuntimeHints(ServletEndpointDiscoverer.ServletEndpointDiscovererRuntimeHints.class)
-@Deprecated(since = "3.3.0", forRemoval = true)
-@SuppressWarnings("removal")
+@ImportRuntimeHints(ServletEndpointDiscovererRuntimeHints.class)
 public class ServletEndpointDiscoverer extends EndpointDiscoverer<ExposableServletEndpoint, Operation>
 		implements ServletEndpointsSupplier {
 

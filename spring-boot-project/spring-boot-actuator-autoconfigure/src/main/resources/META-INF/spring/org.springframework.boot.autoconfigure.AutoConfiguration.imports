@@ -64,7 +64,6 @@ org.springframework.boot.actuate.autoconfigure.metrics.export.kairos.KairosMetri
 org.springframework.boot.actuate.autoconfigure.metrics.export.newrelic.NewRelicMetricsExportAutoConfiguration
 org.springframework.boot.actuate.autoconfigure.metrics.export.otlp.OtlpMetricsExportAutoConfiguration
 org.springframework.boot.actuate.autoconfigure.metrics.export.prometheus.PrometheusMetricsExportAutoConfiguration
-org.springframework.boot.actuate.autoconfigure.metrics.export.prometheus.PrometheusSimpleclientMetricsExportAutoConfiguration
 org.springframework.boot.actuate.autoconfigure.metrics.export.signalfx.SignalFxMetricsExportAutoConfiguration
 org.springframework.boot.actuate.autoconfigure.metrics.export.simple.SimpleMetricsExportAutoConfiguration
 org.springframework.boot.actuate.autoconfigure.metrics.export.stackdriver.StackdriverMetricsExportAutoConfiguration
@@ -72,6 +71,7 @@ org.springframework.boot.actuate.autoconfigure.metrics.export.statsd.StatsdMetri
 org.springframework.boot.actuate.autoconfigure.metrics.export.wavefront.WavefrontMetricsExportAutoConfiguration
 org.springframework.boot.actuate.autoconfigure.observation.batch.BatchObservationAutoConfiguration
 org.springframework.boot.actuate.autoconfigure.observation.graphql.GraphQlObservationAutoConfiguration
+org.springframework.boot.actuate.autoconfigure.observation.jms.JmsTemplateObservationAutoConfiguration
 org.springframework.boot.actuate.autoconfigure.metrics.integration.IntegrationMetricsAutoConfiguration
 org.springframework.boot.actuate.autoconfigure.metrics.jdbc.DataSourcePoolMetricsAutoConfiguration
 org.springframework.boot.actuate.autoconfigure.metrics.jersey.JerseyServerMetricsAutoConfiguration
@@ -96,7 +96,6 @@ org.springframework.boot.actuate.autoconfigure.r2dbc.ConnectionFactoryHealthCont
 org.springframework.boot.actuate.autoconfigure.r2dbc.R2dbcObservationAutoConfiguration
 org.springframework.boot.actuate.autoconfigure.data.redis.RedisHealthContributorAutoConfiguration
 org.springframework.boot.actuate.autoconfigure.data.redis.RedisReactiveHealthContributorAutoConfiguration
-org.springframework.boot.actuate.autoconfigure.sbom.SbomEndpointAutoConfiguration
 org.springframework.boot.actuate.autoconfigure.scheduling.ScheduledTasksEndpointAutoConfiguration
 org.springframework.boot.actuate.autoconfigure.scheduling.ScheduledTasksObservabilityAutoConfiguration
 org.springframework.boot.actuate.autoconfigure.security.reactive.ReactiveManagementWebSecurityAutoConfiguration
@@ -106,11 +105,9 @@ org.springframework.boot.actuate.autoconfigure.startup.StartupEndpointAutoConfig
 org.springframework.boot.actuate.autoconfigure.system.DiskSpaceHealthContributorAutoConfiguration
 org.springframework.boot.actuate.autoconfigure.tracing.BraveAutoConfiguration
 org.springframework.boot.actuate.autoconfigure.tracing.MicrometerTracingAutoConfiguration
-org.springframework.boot.actuate.autoconfigure.tracing.NoopTracerAutoConfiguration
 org.springframework.boot.actuate.autoconfigure.tracing.OpenTelemetryAutoConfiguration
 org.springframework.boot.actuate.autoconfigure.tracing.otlp.OtlpAutoConfiguration
 org.springframework.boot.actuate.autoconfigure.tracing.prometheus.PrometheusExemplarsAutoConfiguration
-org.springframework.boot.actuate.autoconfigure.tracing.prometheus.PrometheusSimpleclientExemplarsAutoConfiguration
 org.springframework.boot.actuate.autoconfigure.tracing.wavefront.WavefrontTracingAutoConfiguration
 org.springframework.boot.actuate.autoconfigure.tracing.zipkin.ZipkinAutoConfiguration
 org.springframework.boot.actuate.autoconfigure.wavefront.WavefrontAutoConfiguration

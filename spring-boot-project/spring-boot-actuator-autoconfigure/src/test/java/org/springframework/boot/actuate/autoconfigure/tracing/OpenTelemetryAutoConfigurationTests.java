@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,7 +51,6 @@ import io.opentelemetry.sdk.trace.data.SpanData;
 import io.opentelemetry.sdk.trace.export.SpanExporter;
 import io.opentelemetry.sdk.trace.samplers.Sampler;
 import io.opentelemetry.semconv.ResourceAttributes;
-import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -183,7 +182,7 @@ class OpenTelemetryAutoConfigurationTests {
 				exporter.await(Duration.ofSeconds(10));
 				SpanData spanData = exporter.getExportedSpans().get(0);
 				Map<AttributeKey<?>, Object> expectedAttributes = Resource.getDefault()
-					.merge(Resource.create(Attributes.of(ResourceAttributes.SERVICE_NAME, "unknown_service")))
+					.merge(Resource.create(Attributes.of(ResourceAttributes.SERVICE_NAME, "application")))
 					.getAttributes()
 					.asMap();
 				assertThat(spanData.getResource().getAttributes().asMap()).isEqualTo(expectedAttributes);
@@ -274,22 +273,6 @@ class OpenTelemetryAutoConfigurationTests {
 	}
 
 	@Test
-	void shouldConfigureRemoteAndTaggedFields() {
-		this.contextRunner
-			.withPropertyValues("management.tracing.baggage.remote-fields=r1",
-					"management.tracing.baggage.tag-fields=t1")
-			.run((context) -> {
-				CompositeTextMapPropagator propagator = context.getBean(CompositeTextMapPropagator.class);
-				assertThat(propagator).extracting("baggagePropagator.baggageManager.remoteFields")
-					.asInstanceOf(InstanceOfAssertFactories.list(String.class))
-					.containsExactly("r1");
-				assertThat(propagator).extracting("baggagePropagator.baggageManager.tagFields")
-					.asInstanceOf(InstanceOfAssertFactories.list(String.class))
-					.containsExactly("t1");
-			});
-	}
-
-	@Test
 	void shouldCustomizeSdkTracerProvider() {
 		this.contextRunner.withUserConfiguration(SdkTracerProviderCustomizationConfiguration.class).run((context) -> {
 			SdkTracerProvider tracerProvider = context.getBean(SdkTracerProvider.class);
@@ -307,15 +290,6 @@ class OpenTelemetryAutoConfigurationTests {
 		});
 	}
 
-	@Test
-	void shouldDisablePropagationIfTracingIsDisabled() {
-		this.contextRunner.withPropertyValues("management.tracing.enabled=false").run((context) -> {
-			assertThat(context).hasSingleBean(TextMapPropagator.class);
-			TextMapPropagator propagator = context.getBean(TextMapPropagator.class);
-			assertThat(propagator.fields()).isEmpty();
-		});
-	}
-
 	private List<TextMapPropagator> getInjectors(TextMapPropagator propagator) {
 		assertThat(propagator).as("propagator").isNotNull();
 		if (propagator instanceof CompositeTextMapPropagator compositePropagator) {
@@ -326,7 +300,7 @@ class OpenTelemetryAutoConfigurationTests {
 	}
 
 	@Configuration(proxyBeanMethods = false)
-	private static final class MeterProviderConfiguration {
+	private static class MeterProviderConfiguration {
 
 		@Bean
 		MeterProvider meterProvider() {
@@ -339,7 +313,7 @@ class OpenTelemetryAutoConfigurationTests {
 	}
 
 	@Configuration(proxyBeanMethods = false)
-	private static final class AdditionalSpanProcessorConfiguration {
+	private static class AdditionalSpanProcessorConfiguration {
 
 		@Bean
 		SpanProcessor customSpanProcessor() {
@@ -349,7 +323,7 @@ class OpenTelemetryAutoConfigurationTests {
 	}
 
 	@Configuration(proxyBeanMethods = false)
-	private static final class MultipleSpanExporterConfiguration {
+	private static class MultipleSpanExporterConfiguration {
 
 		@Bean
 		SpanExporter spanExporter1() {
@@ -364,7 +338,7 @@ class OpenTelemetryAutoConfigurationTests {
 	}
 
 	@Configuration(proxyBeanMethods = false)
-	private static final class CustomConfiguration {
+	private static class CustomConfiguration {
 
 		@Bean
 		SpanProcessors customSpanProcessors() {
@@ -444,7 +418,7 @@ class OpenTelemetryAutoConfigurationTests {
 	}
 
 	@Configuration(proxyBeanMethods = false)
-	private static final class SdkTracerProviderCustomizationConfiguration {
+	private static class SdkTracerProviderCustomizationConfiguration {
 
 		@Bean
 		@Order(1)
@@ -466,7 +440,7 @@ class OpenTelemetryAutoConfigurationTests {
 
 	}
 
-	private static final class DummySpanExporter implements SpanExporter {
+	private static class DummySpanExporter implements SpanExporter {
 
 		@Override
 		public CompletableResultCode export(Collection<SpanData> spans) {
@@ -486,7 +460,7 @@ class OpenTelemetryAutoConfigurationTests {
 	}
 
 	@Configuration(proxyBeanMethods = false)
-	private static final class InMemoryRecordingSpanExporterConfiguration {
+	private static class InMemoryRecordingSpanExporterConfiguration {
 
 		@Bean
 		InMemoryRecordingSpanExporter spanExporter() {
@@ -495,7 +469,7 @@ class OpenTelemetryAutoConfigurationTests {
 
 	}
 
-	private static final class InMemoryRecordingSpanExporter implements SpanExporter {
+	private static class InMemoryRecordingSpanExporter implements SpanExporter {
 
 		private final List<SpanData> exportedSpans = new ArrayList<>();
 

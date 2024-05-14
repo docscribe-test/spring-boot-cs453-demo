@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -155,11 +155,6 @@ final class JarUrlConnection extends java.net.JarURLConnection {
 	}
 
 	@Override
-	public long getLastModified() {
-		return (this.jarFileConnection != null) ? this.jarFileConnection.getLastModified() : super.getLastModified();
-	}
-
-	@Override
 	public String getHeaderField(String name) {
 		return (this.jarFileConnection != null) ? this.jarFileConnection.getHeaderField(name) : null;
 	}
@@ -172,7 +167,7 @@ final class JarUrlConnection extends java.net.JarURLConnection {
 
 	@Override
 	public Permission getPermission() throws IOException {
-		return (this.jarFileConnection != null) ? this.jarFileConnection.getPermission() : null;
+		return this.jarFileConnection.getPermission();
 	}
 
 	@Override
@@ -180,12 +175,11 @@ final class JarUrlConnection extends java.net.JarURLConnection {
 		if (this.notFound != null) {
 			throwFileNotFound();
 		}
-		URL jarFileURL = getJarFileURL();
-		if (this.entryName == null && !UrlJarFileFactory.isNestedUrl(jarFileURL)) {
+		if (this.entryName == null) {
 			throw new IOException("no entry name specified");
 		}
-		if (!getUseCaches() && Optimizations.isEnabled(false) && this.entryName != null) {
-			JarFile cached = jarFiles.getCached(jarFileURL);
+		if (!getUseCaches() && Optimizations.isEnabled(false)) {
+			JarFile cached = jarFiles.getCached(getJarFileURL());
 			if (cached != null) {
 				if (cached.getEntry(this.entryName) != null) {
 					return emptyInputStream;
@@ -194,12 +188,6 @@ final class JarUrlConnection extends java.net.JarURLConnection {
 		}
 		connect();
 		if (this.jarEntry == null) {
-			if (this.jarFile instanceof NestedJarFile nestedJarFile) {
-				// In order to work with Tomcat's TLD scanning and WarURLConnection we
-				// return the raw zip data rather than failing because there is no entry.
-				// See gh-38047 for details.
-				return nestedJarFile.getRawZipDataInputStream();
-			}
 			throwFileNotFound();
 		}
 		return new ConnectionInputStream();
@@ -207,7 +195,7 @@ final class JarUrlConnection extends java.net.JarURLConnection {
 
 	@Override
 	public boolean getAllowUserInteraction() {
-		return (this.jarFileConnection != null) && this.jarFileConnection.getAllowUserInteraction();
+		return (this.jarFileConnection != null) ? this.jarFileConnection.getAllowUserInteraction() : false;
 	}
 
 	@Override
@@ -219,7 +207,7 @@ final class JarUrlConnection extends java.net.JarURLConnection {
 
 	@Override
 	public boolean getUseCaches() {
-		return (this.jarFileConnection == null) || this.jarFileConnection.getUseCaches();
+		return (this.jarFileConnection != null) ? this.jarFileConnection.getUseCaches() : true;
 	}
 
 	@Override
@@ -231,7 +219,7 @@ final class JarUrlConnection extends java.net.JarURLConnection {
 
 	@Override
 	public boolean getDefaultUseCaches() {
-		return (this.jarFileConnection == null) || this.jarFileConnection.getDefaultUseCaches();
+		return (this.jarFileConnection != null) ? this.jarFileConnection.getDefaultUseCaches() : true;
 	}
 
 	@Override
@@ -399,7 +387,7 @@ final class JarUrlConnection extends java.net.JarURLConnection {
 	 * Empty {@link URLStreamHandler} used to prevent the wrong JAR Handler from being
 	 * Instantiated and cached.
 	 */
-	private static final class EmptyUrlStreamHandler extends URLStreamHandler {
+	private static class EmptyUrlStreamHandler extends URLStreamHandler {
 
 		@Override
 		protected URLConnection openConnection(URL url) {

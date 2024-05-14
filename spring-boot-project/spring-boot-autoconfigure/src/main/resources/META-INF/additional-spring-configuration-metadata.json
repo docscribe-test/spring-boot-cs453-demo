@@ -338,10 +338,6 @@
       "defaultValue": "TLS"
     },
     {
-      "name": "server.ssl.server-name-bundles",
-      "description": "Mapping of host names to SSL bundles for SNI configuration."
-    },
-    {
       "name": "server.ssl.trust-certificate",
       "description": "Path to a PEM-encoded SSL certificate authority file."
     },
@@ -672,26 +668,6 @@
       "deprecation": {
         "replacement": "spring.couchbase.env.io.min-endpoints",
         "level": "error"
-      }
-    },
-    {
-      "name": "spring.couchbase.env.ssl.key-store",
-      "type": "java.lang.String",
-      "description": "Path to the JVM key store that holds the certificates.",
-      "deprecation": {
-        "replacement": "spring.couchbase.env.ssl.bundle",
-        "level": "error",
-        "since": "3.1.0"
-      }
-    },
-    {
-      "name": "spring.couchbase.env.ssl.key-store-password",
-      "type": "java.lang.String",
-      "description": "Password used to access the key store.",
-      "deprecation": {
-        "replacement": "spring.couchbase.env.ssl.bundle",
-        "level": "error",
-        "since": "3.1.0"
       }
     },
     {
@@ -1340,14 +1316,6 @@
       }
     },
     {
-      "name": "spring.flyway.cherry-pick",
-      "description": "Migrations that Flyway should consider when migrating or undoing. When empty all available migrations are considered. Requires Flyway Teams.",
-      "deprecation": {
-        "level": "error",
-        "reason": "Removed in Flyway 10"
-      }
-    },
-    {
       "name": "spring.flyway.dry-run-output",
       "type": "java.io.OutputStream",
       "deprecation": {
@@ -1404,14 +1372,6 @@
       }
     },
     {
-      "name": "spring.flyway.license-key",
-      "description": "License key for Flyway Teams.",
-      "deprecation": {
-        "level": "error",
-        "reason": "Removed in Flyway 10"
-      }
-    },
-    {
       "name": "spring.flyway.locations",
       "sourceType": "org.springframework.boot.autoconfigure.flyway.FlywayProperties",
       "defaultValue": [
@@ -1446,7 +1406,7 @@
       "type": "java.lang.String",
       "deprecation": {
         "level": "error",
-        "reason": "Removed in Flyway 10"
+        "reason": "Flyway Teams only."
       }
     },
     {
@@ -1598,10 +1558,6 @@
     {
       "name": "spring.jackson.constructor-detector",
       "defaultValue": "default"
-    },
-    {
-      "name": "spring.jackson.datatype.enum",
-      "description": "Jackson on/off features for enums."
     },
     {
       "name": "spring.jackson.joda-date-time-format",
@@ -1941,17 +1897,8 @@
       "name": "spring.kafka.streams.cache-max-bytes-buffering",
       "type": "java.lang.Integer",
       "deprecation": {
-        "replacement": "spring.kafka.streams.state-store-cache-max-size",
+        "replacement": "spring.kafka.streams.cache-max-size-buffering",
         "level": "error"
-      }
-    },
-    {
-      "name": "spring.kafka.streams.cache-max-size-buffering",
-      "type": "java.lang.Integer",
-      "deprecation": {
-        "replacement": "spring.kafka.streams.state-store-cache-max-size",
-        "level": "error",
-        "since": "3.1.0"
       }
     },
     {
@@ -1970,18 +1917,6 @@
         "replacement": "spring.liquibase.label-filter",
         "level": "error"
       }
-    },
-    {
-      "name": "spring.liquibase.show-summary",
-      "defaultValue": "summary"
-    },
-    {
-      "name": "spring.liquibase.show-summary-output",
-      "defaultValue": "log"
-    },
-    {
-      "name": "spring.liquibase.ui-service",
-      "defaultValue": "logger"
     },
     {
       "name": "spring.mail.test-connection",
@@ -2079,10 +2014,6 @@
     {
       "name": "spring.neo4j.uri",
       "defaultValue": "bolt://localhost:7687"
-    },
-    {
-      "name": "spring.pulsar.client.failover.policy",
-      "defaultValue": "order"
     },
     {
       "name": "spring.pulsar.function.enabled",
@@ -2679,10 +2610,6 @@
       "name": "spring.rsocket.server.ssl.protocol",
       "description": "SSL protocol to use.",
       "defaultValue": "TLS"
-    },
-    {
-      "name": "spring.rsocket.server.ssl.server-name-bundles",
-      "description": "Mapping of host names to SSL bundles for SNI configuration."
     },
     {
       "name": "spring.rsocket.server.ssl.trust-certificate",

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -198,7 +198,6 @@ class WebMvcEndpointIntegrationTests {
 	}
 
 	@ServletEndpoint(id = "servlet")
-	@SuppressWarnings("removal")
 	static class TestServletEndpoint implements Supplier<EndpointServlet> {
 
 		@Override
@@ -210,13 +209,11 @@ class WebMvcEndpointIntegrationTests {
 	}
 
 	@ControllerEndpoint(id = "controller")
-	@SuppressWarnings("removal")
 	static class TestControllerEndpoint {
 
 	}
 
 	@RestControllerEndpoint(id = "restcontroller")
-	@SuppressWarnings("removal")
 	static class TestRestControllerEndpoint {
 
 	}

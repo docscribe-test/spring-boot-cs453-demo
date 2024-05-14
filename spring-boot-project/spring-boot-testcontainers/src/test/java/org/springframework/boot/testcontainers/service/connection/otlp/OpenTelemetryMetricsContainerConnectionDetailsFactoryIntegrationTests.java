@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,6 @@ import org.springframework.boot.testcontainers.service.connection.ServiceConnect
 import org.springframework.boot.testsupport.testcontainers.DockerImageNames;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
@@ -58,7 +57,6 @@ import static org.hamcrest.Matchers.matchesPattern;
 @TestPropertySource(properties = { "management.otlp.metrics.export.resource-attributes.service.name=test",
 		"management.otlp.metrics.export.step=1s" })
 @Testcontainers(disabledWithoutDocker = true)
-@DirtiesContext
 class OpenTelemetryMetricsContainerConnectionDetailsFactoryIntegrationTests {
 
 	private static final String OPENMETRICS_001 = "application/openmetrics-text; version=0.0.1; charset=utf-8";
@@ -88,7 +86,7 @@ class OpenTelemetryMetricsContainerConnectionDetailsFactoryIntegrationTests {
 			.untilAsserted(() -> whenPrometheusScraped().then()
 				.statusCode(200)
 				.contentType(OPENMETRICS_001)
-				.body(endsWith("# EOF\n"), containsString("service_name")));
+				.body(endsWith("# EOF\n")));
 		whenPrometheusScraped().then()
 			.body(containsString(
 					"{job=\"test\",service_name=\"test\",telemetry_sdk_language=\"java\",telemetry_sdk_name=\"io.micrometer\""),

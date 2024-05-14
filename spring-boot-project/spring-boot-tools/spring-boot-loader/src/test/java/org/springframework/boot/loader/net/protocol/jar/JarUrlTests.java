@@ -25,8 +25,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import org.springframework.boot.loader.net.util.UrlDecoder;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -46,54 +44,44 @@ class JarUrlTests {
 	@BeforeEach
 	void setup() throws MalformedURLException {
 		this.jarFile = new File(this.temp, "my.jar");
-		this.jarFileUrlPath = this.jarFile.toURI().toURL().toString().substring("file:".length()).replace("!", "%21");
+		this.jarFileUrlPath = this.temp.toURI().toURL().toString().substring("file:".length());
 	}
 
 	@Test
 	void createWithFileReturnsUrl() {
-		URL url = JarUrl.create(this.jarFile);
+		URL url = JarUrl.create(this.temp);
 		assertThat(url).hasToString("jar:file:%s!/".formatted(this.jarFileUrlPath));
 	}
 
 	@Test
 	void createWithFileAndEntryReturnsUrl() {
 		JarEntry entry = new JarEntry("lib.jar");
-		URL url = JarUrl.create(this.jarFile, entry);
+		URL url = JarUrl.create(this.temp, entry);
 		assertThat(url).hasToString("jar:nested:%s/!lib.jar!/".formatted(this.jarFileUrlPath));
 	}
 
 	@Test
 	void createWithFileAndNullEntryReturnsUrl() {
-		URL url = JarUrl.create(this.jarFile, (JarEntry) null);
+		URL url = JarUrl.create(this.temp, (JarEntry) null);
 		assertThat(url).hasToString("jar:file:%s!/".formatted(this.jarFileUrlPath));
 	}
 
 	@Test
 	void createWithFileAndNameReturnsUrl() {
-		URL url = JarUrl.create(this.jarFile, "lib.jar");
+		URL url = JarUrl.create(this.temp, "lib.jar");
 		assertThat(url).hasToString("jar:nested:%s/!lib.jar!/".formatted(this.jarFileUrlPath));
 	}
 
 	@Test
 	void createWithFileAndNullNameReturnsUrl() {
-		URL url = JarUrl.create(this.jarFile, (String) null);
+		URL url = JarUrl.create(this.temp, (String) null);
 		assertThat(url).hasToString("jar:file:%s!/".formatted(this.jarFileUrlPath));
 	}
 
 	@Test
 	void createWithFileNameAndPathReturnsUrl() {
-		URL url = JarUrl.create(this.jarFile, "lib.jar", "com/example/My.class");
+		URL url = JarUrl.create(this.temp, "lib.jar", "com/example/My.class");
 		assertThat(url).hasToString("jar:nested:%s/!lib.jar!/com/example/My.class".formatted(this.jarFileUrlPath));
-	}
-
-	@Test
-	void createWithReservedCharsInName() throws Exception {
-		String badFolderName = "foo#bar!/baz/!oof";
-		this.temp = new File(this.temp, badFolderName);
-		setup();
-		URL url = JarUrl.create(this.jarFile, "lib.jar", "com/example/My.class");
-		assertThat(url).hasToString("jar:nested:%s/!lib.jar!/com/example/My.class".formatted(this.jarFileUrlPath));
-		assertThat(UrlDecoder.decode(url.toString())).contains(badFolderName);
 	}
 
 }

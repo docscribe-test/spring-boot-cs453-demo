@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Date;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 import jakarta.servlet.RequestDispatcher;
@@ -37,7 +36,6 @@ import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.ObjectError;
-import org.springframework.validation.method.MethodValidationResult;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.HandlerExceptionResolver;
@@ -52,8 +50,8 @@ import org.springframework.web.servlet.ModelAndView;
  * <li>error - The error reason</li>
  * <li>exception - The class name of the root exception (if configured)</li>
  * <li>message - The exception message (if configured)</li>
- * <li>errors - Any {@link ObjectError}s from a {@link BindingResult} or
- * {@link MethodValidationResult} exception (if configured)</li>
+ * <li>errors - Any {@link ObjectError}s from a {@link BindingResult} exception (if
+ * configured)</li>
  * <li>trace - The exception stack trace (if configured)</li>
  * <li>path - The URL path when the exception was raised</li>
  * </ul>
@@ -63,8 +61,6 @@ import org.springframework.web.servlet.ModelAndView;
  * @author Stephane Nicoll
  * @author Vedran Pavic
  * @author Scott Frederick
- * @author Moritz Halbritter
- * @author Yanming Zhou
  * @since 2.0.0
  * @see ErrorAttributes
  */
@@ -103,9 +99,6 @@ public class DefaultErrorAttributes implements ErrorAttributes, HandlerException
 		}
 		if (!options.isIncluded(Include.BINDING_ERRORS)) {
 			errorAttributes.remove("errors");
-		}
-		if (!options.isIncluded(Include.PATH)) {
-			errorAttributes.remove("path");
 		}
 		return errorAttributes;
 	}
@@ -152,18 +145,12 @@ public class DefaultErrorAttributes implements ErrorAttributes, HandlerException
 	}
 
 	private void addErrorMessage(Map<String, Object> errorAttributes, WebRequest webRequest, Throwable error) {
-		BindingResult bindingResult = extractBindingResult(error);
-		if (bindingResult != null) {
-			addMessageAndErrorsFromBindingResult(errorAttributes, bindingResult);
+		BindingResult result = extractBindingResult(error);
+		if (result == null) {
+			addExceptionErrorMessage(errorAttributes, webRequest, error);
 		}
 		else {
-			MethodValidationResult methodValidationResult = extractMethodValidationResult(error);
-			if (methodValidationResult != null) {
-				addMessageAndErrorsFromMethodValidationResult(errorAttributes, methodValidationResult);
-			}
-			else {
-				addExceptionErrorMessage(errorAttributes, webRequest, error);
-			}
+			addBindingResultErrorMessage(errorAttributes, result);
 		}
 	}
 
@@ -196,37 +183,15 @@ public class DefaultErrorAttributes implements ErrorAttributes, HandlerException
 		return "No message available";
 	}
 
-	private void addMessageAndErrorsFromBindingResult(Map<String, Object> errorAttributes, BindingResult result) {
-		addMessageAndErrorsForValidationFailure(errorAttributes, "object='" + result.getObjectName() + "'",
-				result.getAllErrors());
-	}
-
-	private void addMessageAndErrorsFromMethodValidationResult(Map<String, Object> errorAttributes,
-			MethodValidationResult result) {
-		List<ObjectError> errors = result.getAllErrors()
-			.stream()
-			.filter(ObjectError.class::isInstance)
-			.map(ObjectError.class::cast)
-			.toList();
-		addMessageAndErrorsForValidationFailure(errorAttributes, "method='" + result.getMethod() + "'", errors);
-	}
-
-	private void addMessageAndErrorsForValidationFailure(Map<String, Object> errorAttributes, String validated,
-			List<ObjectError> errors) {
-		errorAttributes.put("message", "Validation failed for " + validated + ". Error count: " + errors.size());
-		errorAttributes.put("errors", errors);
+	private void addBindingResultErrorMessage(Map<String, Object> errorAttributes, BindingResult result) {
+		errorAttributes.put("message", "Validation failed for object='" + result.getObjectName() + "'. "
+				+ "Error count: " + result.getErrorCount());
+		errorAttributes.put("errors", result.getAllErrors());
 	}
 
 	private BindingResult extractBindingResult(Throwable error) {
 		if (error instanceof BindingResult bindingResult) {
 			return bindingResult;
-		}
-		return null;
-	}
-
-	private MethodValidationResult extractMethodValidationResult(Throwable error) {
-		if (error instanceof MethodValidationResult methodValidationResult) {
-			return methodValidationResult;
 		}
 		return null;
 	}
@@ -251,6 +216,9 @@ public class DefaultErrorAttributes implements ErrorAttributes, HandlerException
 		if (exception == null) {
 			exception = getAttribute(webRequest, RequestDispatcher.ERROR_EXCEPTION);
 		}
+		// store the exception in a well-known attribute to make it available to metrics
+		// instrumentation.
+		webRequest.setAttribute(ErrorAttributes.ERROR_ATTRIBUTE, exception, WebRequest.SCOPE_REQUEST);
 		return exception;
 	}
 

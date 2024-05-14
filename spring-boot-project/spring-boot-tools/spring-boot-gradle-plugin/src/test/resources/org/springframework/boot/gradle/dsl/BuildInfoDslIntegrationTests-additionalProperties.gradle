@@ -10,8 +10,7 @@ springBoot {
 	buildInfo {
 		properties {
 			additional = [
-				'a': 'alpha',
-				'b': providers.provider({'bravo'})
+				'a': 'alpha', 'b': 'bravo'
 			]
 		}
 	}

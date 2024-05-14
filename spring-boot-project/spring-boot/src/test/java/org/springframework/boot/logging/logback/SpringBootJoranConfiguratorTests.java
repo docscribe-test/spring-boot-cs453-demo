@@ -84,14 +84,6 @@ class SpringBootJoranConfiguratorTests {
 	}
 
 	@Test
-	void profileInIncludeActive() throws Exception {
-		this.environment.setActiveProfiles("production");
-		initialize("profile-in-include.xml");
-		this.logger.trace("Hello");
-		assertThat(this.output).contains("Hello");
-	}
-
-	@Test
 	void multipleNamesFirstProfileActive() throws Exception {
 		this.environment.setActiveProfiles("production");
 		initialize("multi-profile-names.xml");
@@ -209,13 +201,6 @@ class SpringBootJoranConfiguratorTests {
 		TestPropertySourceUtils.addInlinedPropertiesToEnvironment(this.environment, "my.example-property=false");
 		initialize("property-in-if.xml");
 		assertThat(this.context.getProperty("MYCHECK")).isNull();
-	}
-
-	@Test
-	void springPropertyInInclude() throws Exception {
-		TestPropertySourceUtils.addInlinedPropertiesToEnvironment(this.environment, "my.example-property=test");
-		initialize("property-in-include.xml");
-		assertThat(this.context.getProperty("MINE")).isEqualTo("test");
 	}
 
 	@Test

@@ -79,7 +79,7 @@ public final class JarUrl {
 	}
 
 	private static String getJarReference(File file, String nestedEntryName) {
-		String jarFilePath = file.toURI().getRawPath().replace("!", "%21");
+		String jarFilePath = file.toURI().getPath();
 		return (nestedEntryName != null) ? "nested:" + jarFilePath + "/!" + nestedEntryName : "file:" + jarFilePath;
 	}
 

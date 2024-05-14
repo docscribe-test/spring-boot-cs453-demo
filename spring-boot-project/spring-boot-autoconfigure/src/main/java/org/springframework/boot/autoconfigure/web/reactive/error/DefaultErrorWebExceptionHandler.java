@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,7 +75,6 @@ import static org.springframework.web.reactive.function.server.RouterFunctions.r
  *
  * @author Brian Clozel
  * @author Scott Frederick
- * @author Moritz Halbritter
  * @since 2.0.0
  */
 public class DefaultErrorWebExceptionHandler extends AbstractErrorWebExceptionHandler {
@@ -165,7 +164,6 @@ public class DefaultErrorWebExceptionHandler extends AbstractErrorWebExceptionHa
 		if (isIncludeBindingErrors(request, mediaType)) {
 			options = options.including(Include.BINDING_ERRORS);
 		}
-		options = isIncludePath(request, mediaType) ? options.including(Include.PATH) : options.excluding(Include.PATH);
 		return options;
 	}
 
@@ -179,7 +177,7 @@ public class DefaultErrorWebExceptionHandler extends AbstractErrorWebExceptionHa
 		return switch (this.errorProperties.getIncludeStacktrace()) {
 			case ALWAYS -> true;
 			case ON_PARAM -> isTraceEnabled(request);
-			case NEVER -> false;
+			default -> false;
 		};
 	}
 
@@ -193,7 +191,7 @@ public class DefaultErrorWebExceptionHandler extends AbstractErrorWebExceptionHa
 		return switch (this.errorProperties.getIncludeMessage()) {
 			case ALWAYS -> true;
 			case ON_PARAM -> isMessageEnabled(request);
-			case NEVER -> false;
+			default -> false;
 		};
 	}
 
@@ -207,22 +205,7 @@ public class DefaultErrorWebExceptionHandler extends AbstractErrorWebExceptionHa
 		return switch (this.errorProperties.getIncludeBindingErrors()) {
 			case ALWAYS -> true;
 			case ON_PARAM -> isBindingErrorsEnabled(request);
-			case NEVER -> false;
-		};
-	}
-
-	/**
-	 * Determine if the path attribute should be included.
-	 * @param request the source request
-	 * @param produces the media type produced (or {@code MediaType.ALL})
-	 * @return if the path attribute should be included
-	 * @since 3.3.0
-	 */
-	protected boolean isIncludePath(ServerRequest request, MediaType produces) {
-		return switch (this.errorProperties.getIncludePath()) {
-			case ALWAYS -> true;
-			case ON_PARAM -> isPathEnabled(request);
-			case NEVER -> false;
+			default -> false;
 		};
 	}
 

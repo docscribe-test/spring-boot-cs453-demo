@@ -25,26 +25,23 @@ import org.springframework.boot.docker.compose.service.connection.DockerComposeC
 import org.springframework.boot.docker.compose.service.connection.r2dbc.ConnectionFactoryOptionsBuilder;
 
 /**
- * Base class for a {@link DockerComposeConnectionDetailsFactory} to create
- * {@link R2dbcConnectionDetails} for an {@code oracle-free} or {@code oracle-xe} service.
+ * {@link DockerComposeConnectionDetailsFactory} to create {@link R2dbcConnectionDetails}
+ * for an {@code oracle-xe} service.
  *
  * @author Moritz Halbritter
  * @author Andy Wilkinson
  * @author Phillip Webb
  */
-abstract class OracleR2dbcDockerComposeConnectionDetailsFactory
+class OracleR2dbcDockerComposeConnectionDetailsFactory
 		extends DockerComposeConnectionDetailsFactory<R2dbcConnectionDetails> {
 
-	private final String defaultDatabase;
-
-	OracleR2dbcDockerComposeConnectionDetailsFactory(OracleContainer container) {
-		super(container.getImageName(), "io.r2dbc.spi.ConnectionFactoryOptions");
-		this.defaultDatabase = container.getDefaultDatabase();
+	OracleR2dbcDockerComposeConnectionDetailsFactory() {
+		super("gvenzl/oracle-xe", "io.r2dbc.spi.ConnectionFactoryOptions");
 	}
 
 	@Override
 	protected R2dbcConnectionDetails getDockerComposeConnectionDetails(DockerComposeConnectionSource source) {
-		return new OracleDbR2dbcDockerComposeConnectionDetails(source.getRunningService(), this.defaultDatabase);
+		return new OracleDbR2dbcDockerComposeConnectionDetails(source.getRunningService());
 	}
 
 	/**
@@ -59,9 +56,9 @@ abstract class OracleR2dbcDockerComposeConnectionDetailsFactory
 
 		private final ConnectionFactoryOptions connectionFactoryOptions;
 
-		OracleDbR2dbcDockerComposeConnectionDetails(RunningService service, String defaultDatabase) {
+		OracleDbR2dbcDockerComposeConnectionDetails(RunningService service) {
 			super(service);
-			OracleEnvironment environment = new OracleEnvironment(service.env(), defaultDatabase);
+			OracleEnvironment environment = new OracleEnvironment(service.env());
 			this.connectionFactoryOptions = connectionFactoryOptionsBuilder.build(service, environment.getDatabase(),
 					environment.getUsername(), environment.getPassword());
 		}

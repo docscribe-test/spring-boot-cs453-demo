@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,9 +24,8 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
-import com.gradle.develocity.agent.gradle.test.DevelocityTestConfiguration;
-import com.gradle.develocity.agent.gradle.test.PredictiveTestSelectionConfiguration;
-import com.gradle.develocity.agent.gradle.test.TestRetryConfiguration;
+import com.gradle.enterprise.gradleplugin.testretry.TestRetryExtension;
+import com.gradle.enterprise.gradleplugin.testselection.PredictiveTestSelectionExtension;
 import io.spring.javaformat.gradle.SpringJavaFormatPlugin;
 import io.spring.javaformat.gradle.tasks.CheckFormat;
 import io.spring.javaformat.gradle.tasks.Format;
@@ -84,8 +83,8 @@ import org.springframework.util.StringUtils;
  * <ul>
  * <li>Use {@code -parameters}.
  * <li>Treat warnings as errors
- * <li>Enable {@code unchecked}, {@code deprecation}, {@code rawtypes}, and
- * {@code varargs} warnings
+ * <li>Enable {@code unchecked}, {@code deprecation}, {@code rawtypes}, and {@code varags}
+ * warnings
  * </ul>
  * <li>{@link Jar} tasks are configured to produce jars with LICENSE.txt and NOTICE.txt
  * files and the following manifest entries:
@@ -179,9 +178,7 @@ class JavaConventions {
 	}
 
 	private void configureTestRetries(Test test) {
-		TestRetryConfiguration testRetry = test.getExtensions()
-			.getByType(DevelocityTestConfiguration.class)
-			.getTestRetry();
+		TestRetryExtension testRetry = test.getExtensions().getByType(TestRetryExtension.class);
 		testRetry.getFailOnPassedAfterRetry().set(false);
 		testRetry.getMaxRetries().set(isCi() ? 3 : 0);
 	}
@@ -192,9 +189,8 @@ class JavaConventions {
 
 	private void configurePredictiveTestSelection(Test test) {
 		if (isPredictiveTestSelectionEnabled()) {
-			PredictiveTestSelectionConfiguration predictiveTestSelection = test.getExtensions()
-				.getByType(DevelocityTestConfiguration.class)
-				.getPredictiveTestSelection();
+			PredictiveTestSelectionExtension predictiveTestSelection = test.getExtensions()
+				.getByType(PredictiveTestSelectionExtension.class);
 			predictiveTestSelection.getEnabled().convention(true);
 		}
 	}
@@ -243,12 +239,10 @@ class JavaConventions {
 		project.getTasks().withType(Format.class, (Format) -> Format.setEncoding("UTF-8"));
 		project.getPlugins().apply(CheckstylePlugin.class);
 		CheckstyleExtension checkstyle = project.getExtensions().getByType(CheckstyleExtension.class);
-		checkstyle.setToolVersion("10.12.4");
+		checkstyle.setToolVersion("8.45.1");
 		checkstyle.getConfigDirectory().set(project.getRootProject().file("src/checkstyle"));
 		String version = SpringJavaFormatPlugin.class.getPackage().getImplementationVersion();
 		DependencySet checkstyleDependencies = project.getConfigurations().getByName("checkstyle").getDependencies();
-		checkstyleDependencies
-			.add(project.getDependencies().create("com.puppycrawl.tools:checkstyle:" + checkstyle.getToolVersion()));
 		checkstyleDependencies
 			.add(project.getDependencies().create("io.spring.javaformat:spring-javaformat-checkstyle:" + version));
 	}
@@ -261,9 +255,8 @@ class JavaConventions {
 			configuration.setCanBeResolved(false);
 		});
 		configurations
-			.matching((configuration) -> (configuration.getName().endsWith("Classpath")
+			.matching((configuration) -> configuration.getName().endsWith("Classpath")
 					|| JavaPlugin.ANNOTATION_PROCESSOR_CONFIGURATION_NAME.equals(configuration.getName()))
-					&& (!configuration.getName().contains("dokkatoo")))
 			.all((configuration) -> configuration.extendsFrom(dependencyManagement));
 		Dependency springBootParent = project.getDependencies()
 			.enforcedPlatform(project.getDependencies()

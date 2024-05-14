@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,7 +84,8 @@ public class RabbitAutoConfiguration {
 
 		private final RabbitProperties properties;
 
-		protected RabbitConnectionFactoryCreator(RabbitProperties properties) {
+		protected RabbitConnectionFactoryCreator(RabbitProperties properties,
+				ObjectProvider<RabbitConnectionDetails> connectionDetails) {
 			this.properties = properties;
 		}
 
@@ -123,14 +124,17 @@ public class RabbitAutoConfiguration {
 				RabbitConnectionFactoryBeanConfigurer rabbitConnectionFactoryBeanConfigurer,
 				CachingConnectionFactoryConfigurer rabbitCachingConnectionFactoryConfigurer,
 				ObjectProvider<ConnectionFactoryCustomizer> connectionFactoryCustomizers) throws Exception {
+
 			RabbitConnectionFactoryBean connectionFactoryBean = new SslBundleRabbitConnectionFactoryBean();
 			rabbitConnectionFactoryBeanConfigurer.configure(connectionFactoryBean);
 			connectionFactoryBean.afterPropertiesSet();
 			com.rabbitmq.client.ConnectionFactory connectionFactory = connectionFactoryBean.getObject();
 			connectionFactoryCustomizers.orderedStream()
 				.forEach((customizer) -> customizer.customize(connectionFactory));
+
 			CachingConnectionFactory factory = new CachingConnectionFactory(connectionFactory);
 			rabbitCachingConnectionFactoryConfigurer.configure(factory);
+
 			return factory;
 		}
 

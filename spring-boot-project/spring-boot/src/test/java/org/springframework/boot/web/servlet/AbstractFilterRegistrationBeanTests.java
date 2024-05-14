@@ -27,7 +27,6 @@ import jakarta.servlet.DispatcherType;
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterRegistration;
 import jakarta.servlet.ServletContext;
-import jakarta.servlet.ServletException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -35,7 +34,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
-import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -205,16 +204,14 @@ abstract class AbstractFilterRegistrationBeanTests {
 
 	@Test
 	void failsWithDoubleRegistration() {
-		assertThatIllegalStateException().isThrownBy(() -> doubleRegistration())
-			.withMessage("Failed to register 'filter double-registration' on the "
-					+ "servlet context. Possibly already registered?");
-	}
-
-	private void doubleRegistration() throws ServletException {
-		AbstractFilterRegistrationBean<?> bean = createFilterRegistrationBean();
-		bean.setName("double-registration");
-		given(this.servletContext.addFilter(anyString(), any(Filter.class))).willReturn(null);
-		bean.onStartup(this.servletContext);
+		assertThatThrownBy(() -> {
+			AbstractFilterRegistrationBean<?> bean = createFilterRegistrationBean();
+			bean.setName("double-registration");
+			given(this.servletContext.addFilter(anyString(), any(Filter.class))).willReturn(null);
+			bean.onStartup(this.servletContext);
+		}).isInstanceOf(IllegalStateException.class)
+			.hasMessage(
+					"Failed to register 'filter double-registration' on the servlet context. Possibly already registered?");
 	}
 
 	@Test

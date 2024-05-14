@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,7 +77,6 @@ import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.StatisticsHandler;
 import org.eclipse.jetty.session.DefaultSessionCache;
 import org.eclipse.jetty.session.FileSessionDataStore;
-import org.eclipse.jetty.session.SessionConfig;
 import org.eclipse.jetty.util.Callback;
 import org.eclipse.jetty.util.resource.CombinedResource;
 import org.eclipse.jetty.util.resource.Resource;
@@ -117,7 +116,6 @@ import org.springframework.util.StringUtils;
  * @author Venil Noronha
  * @author Henri Kerola
  * @author Moritz Halbritter
- * @author Onur Kagan Ozcan
  * @since 2.0.0
  * @see #setPort(int)
  * @see #setConfigurations(Collection)
@@ -185,7 +183,7 @@ public class JettyServletWebServerFactory extends AbstractServletWebServerFactor
 		server.setHandler(addHandlerWrappers(context));
 		this.logger.info("Server initialized with port: " + port);
 		if (this.maxConnections > -1) {
-			server.addBean(new ConnectionLimit(this.maxConnections, server.getConnectors()));
+			server.addBean(new ConnectionLimit(this.maxConnections, server));
 		}
 		if (Ssl.isEnabled(getSsl())) {
 			customizeSsl(server, address);
@@ -218,6 +216,7 @@ public class JettyServletWebServerFactory extends AbstractServletWebServerFactor
 	private AbstractConnector createConnector(InetSocketAddress address, Server server) {
 		HttpConfiguration httpConfiguration = new HttpConfiguration();
 		httpConfiguration.setSendServerVersion(false);
+		httpConfiguration.setIdleTimeout(30000);
 		List<ConnectionFactory> connectionFactories = new ArrayList<>();
 		connectionFactories.add(new HttpConnectionFactory(httpConfiguration));
 		if (getHttp2() != null && getHttp2().isEnabled()) {
@@ -238,15 +237,9 @@ public class JettyServletWebServerFactory extends AbstractServletWebServerFactor
 			handler = applyWrapper(handler, JettyHandlerWrappers.createServerHeaderHandlerWrapper(getServerHeader()));
 		}
 		if (!CollectionUtils.isEmpty(getCookieSameSiteSuppliers())) {
-			handler = applyWrapper(handler,
-					new SuppliedSameSiteCookieHandlerWrapper(getSessionCookieName(), getCookieSameSiteSuppliers()));
+			handler = applyWrapper(handler, new SuppliedSameSiteCookieHandlerWrapper(getCookieSameSiteSuppliers()));
 		}
 		return handler;
-	}
-
-	private String getSessionCookieName() {
-		String name = getSession().getCookie().getName();
-		return (name != null) ? name : SessionConfig.__DefaultSessionCookie;
 	}
 
 	private Handler applyWrapper(Handler handler, Handler.Wrapper wrapper) {
@@ -255,7 +248,6 @@ public class JettyServletWebServerFactory extends AbstractServletWebServerFactor
 	}
 
 	private void customizeSsl(Server server, InetSocketAddress address) {
-		Assert.state(getSsl().getServerNameBundles().isEmpty(), "Server name SSL bundles are not supported with Jetty");
 		new SslServerCustomizer(getHttp2(), address, getSsl().getClientAuth(), getSslBundle()).customize(server);
 	}
 
@@ -691,7 +683,6 @@ public class JettyServletWebServerFactory extends AbstractServletWebServerFactor
 		}
 
 		@Override
-		@SuppressWarnings({ "deprecation", "removal" })
 		public ReadableByteChannel newReadableByteChannel() throws IOException {
 			return this.delegate.newReadableByteChannel();
 		}
@@ -787,12 +778,9 @@ public class JettyServletWebServerFactory extends AbstractServletWebServerFactor
 
 		private static final SetCookieParser setCookieParser = SetCookieParser.newInstance();
 
-		private final String sessionCookieName;
-
 		private final List<CookieSameSiteSupplier> suppliers;
 
-		SuppliedSameSiteCookieHandlerWrapper(String sessionCookieName, List<CookieSameSiteSupplier> suppliers) {
-			this.sessionCookieName = sessionCookieName;
+		SuppliedSameSiteCookieHandlerWrapper(List<CookieSameSiteSupplier> suppliers) {
 			this.suppliers = suppliers;
 		}
 
@@ -804,7 +792,7 @@ public class JettyServletWebServerFactory extends AbstractServletWebServerFactor
 
 		private class SuppliedSameSiteCookieResponse extends Response.Wrapper {
 
-			private final HttpFields.Mutable wrappedHeaders;
+			private HttpFields.Mutable wrappedHeaders;
 
 			SuppliedSameSiteCookieResponse(Request request, Response wrapped) {
 				super(request, wrapped);
@@ -836,19 +824,12 @@ public class JettyServletWebServerFactory extends AbstractServletWebServerFactor
 
 			private HttpField onAddSetCookieField(HttpField field) {
 				HttpCookie cookie = setCookieParser.parse(field.getValue());
-				if (cookie == null || isSessionCookie(cookie)) {
-					return field;
-				}
-				SameSite sameSite = getSameSite(cookie);
+				SameSite sameSite = (cookie != null) ? getSameSite(cookie) : null;
 				if (sameSite == null) {
 					return field;
 				}
 				HttpCookie updatedCookie = buildCookieWithUpdatedSameSite(cookie, sameSite);
 				return new HttpCookieUtils.SetCookieHttpField(updatedCookie, this.compliance);
-			}
-
-			private boolean isSessionCookie(HttpCookie cookie) {
-				return SuppliedSameSiteCookieHandlerWrapper.this.sessionCookieName.equals(cookie.getName());
 			}
 
 			private HttpCookie buildCookieWithUpdatedSameSite(HttpCookie cookie, SameSite sameSite) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import org.apache.pulsar.client.api.AutoClusterFailoverBuilder.FailoverPolicy;
 import org.apache.pulsar.client.api.CompressionType;
 import org.apache.pulsar.client.api.HashingScheme;
 import org.apache.pulsar.client.api.MessageRoutingMode;
@@ -43,7 +42,6 @@ import org.springframework.util.Assert;
  *
  * @author Chris Bono
  * @author Phillip Webb
- * @author Swamy Mavuri
  * @since 3.2.0
  */
 @ConfigurationProperties("spring.pulsar")
@@ -66,8 +64,6 @@ public class PulsarProperties {
 	private final Reader reader = new Reader();
 
 	private final Template template = new Template();
-
-	private final Transaction transaction = new Transaction();
 
 	public Client getClient() {
 		return this.client;
@@ -105,10 +101,6 @@ public class PulsarProperties {
 		return this.template;
 	}
 
-	public Transaction getTransaction() {
-		return this.transaction;
-	}
-
 	public static class Client {
 
 		/**
@@ -124,7 +116,7 @@ public class PulsarProperties {
 		/**
 		 * Client lookup timeout.
 		 */
-		private Duration lookupTimeout;
+		private Duration lookupTimeout = Duration.ofMillis(-1); // FIXME
 
 		/**
 		 * Duration to wait for a connection to a broker to be established.
@@ -135,11 +127,6 @@ public class PulsarProperties {
 		 * Authentication settings.
 		 */
 		private final Authentication authentication = new Authentication();
-
-		/**
-		 * Failover settings.
-		 */
-		private final Failover failover = new Failover();
 
 		public String getServiceUrl() {
 			return this.serviceUrl;
@@ -175,10 +162,6 @@ public class PulsarProperties {
 
 		public Authentication getAuthentication() {
 			return this.authentication;
-		}
-
-		public Failover getFailover() {
-			return this.failover;
 		}
 
 	}
@@ -767,7 +750,7 @@ public class PulsarProperties {
 		 * Whether to record observations for when the Observations API is available and
 		 * the client supports it.
 		 */
-		private boolean observationEnabled;
+		private boolean observationEnabled = true;
 
 		public SchemaType getSchemaType() {
 			return this.schemaType;
@@ -795,7 +778,7 @@ public class PulsarProperties {
 		private String name;
 
 		/**
-		 * Topics the reader subscribes to.
+		 * Topis the reader subscribes to.
 		 */
 		private List<String> topics;
 
@@ -862,7 +845,7 @@ public class PulsarProperties {
 		/**
 		 * Whether to record observations for when the Observations API is available.
 		 */
-		private boolean observationsEnabled;
+		private boolean observationsEnabled = true;
 
 		public boolean isObservationsEnabled() {
 			return this.observationsEnabled;
@@ -870,23 +853,6 @@ public class PulsarProperties {
 
 		public void setObservationsEnabled(boolean observationsEnabled) {
 			this.observationsEnabled = observationsEnabled;
-		}
-
-	}
-
-	public static class Transaction {
-
-		/**
-		 * Whether transaction support is enabled.
-		 */
-		private boolean enabled;
-
-		public boolean isEnabled() {
-			return this.enabled;
-		}
-
-		public void setEnabled(boolean enabled) {
-			this.enabled = enabled;
 		}
 
 	}
@@ -917,105 +883,6 @@ public class PulsarProperties {
 
 		public void setParam(Map<String, String> param) {
 			this.param = param;
-		}
-
-	}
-
-	public static class Failover {
-
-		/**
-		 * Cluster failover policy.
-		 */
-		private FailoverPolicy policy = FailoverPolicy.ORDER;
-
-		/**
-		 * Delay before the Pulsar client switches from the primary cluster to the backup
-		 * cluster.
-		 */
-		private Duration delay;
-
-		/**
-		 * Delay before the Pulsar client switches from the backup cluster to the primary
-		 * cluster.
-		 */
-		private Duration switchBackDelay;
-
-		/**
-		 * Frequency of performing a probe task.
-		 */
-		private Duration checkInterval;
-
-		/**
-		 * List of backup clusters. The backup cluster is chosen in the sequence of the
-		 * given list. If all backup clusters are available, the Pulsar client chooses the
-		 * first backup cluster.
-		 */
-		private List<BackupCluster> backupClusters = new ArrayList<>();
-
-		public FailoverPolicy getPolicy() {
-			return this.policy;
-		}
-
-		public void setPolicy(FailoverPolicy policy) {
-			this.policy = policy;
-		}
-
-		public Duration getDelay() {
-			return this.delay;
-		}
-
-		public void setDelay(Duration delay) {
-			this.delay = delay;
-		}
-
-		public Duration getSwitchBackDelay() {
-			return this.switchBackDelay;
-		}
-
-		public void setSwitchBackDelay(Duration switchBackDelay) {
-			this.switchBackDelay = switchBackDelay;
-		}
-
-		public Duration getCheckInterval() {
-			return this.checkInterval;
-		}
-
-		public void setCheckInterval(Duration checkInterval) {
-			this.checkInterval = checkInterval;
-		}
-
-		public List<BackupCluster> getBackupClusters() {
-			return this.backupClusters;
-		}
-
-		public void setBackupClusters(List<BackupCluster> backupClusters) {
-			this.backupClusters = backupClusters;
-		}
-
-		public static class BackupCluster {
-
-			/**
-			 * Pulsar service URL in the format '(pulsar|pulsar+ssl)://host:port'.
-			 */
-			private String serviceUrl = "pulsar://localhost:6650";
-
-			/**
-			 * Authentication settings.
-			 */
-			private final Authentication authentication = new Authentication();
-
-			public String getServiceUrl() {
-				return this.serviceUrl;
-			}
-
-			public void setServiceUrl(String serviceUrl) {
-				this.serviceUrl = serviceUrl;
-			}
-
-			public Authentication getAuthentication() {
-				return this.authentication;
-			}
-
 		}
 
 	}

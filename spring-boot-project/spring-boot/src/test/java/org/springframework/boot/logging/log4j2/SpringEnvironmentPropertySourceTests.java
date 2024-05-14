@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.mock.env.MockEnvironment;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 
 /**
  * Tests for {@link SpringEnvironmentPropertySource}.
@@ -42,8 +43,13 @@ class SpringEnvironmentPropertySourceTests {
 	void setup() {
 		this.environment = new MockEnvironment();
 		this.environment.setProperty("spring", "boot");
-		this.propertySource = new SpringEnvironmentPropertySource();
-		this.propertySource.setEnvironment(this.environment);
+		this.propertySource = new SpringEnvironmentPropertySource(this.environment);
+	}
+
+	@Test
+	void createWhenEnvironmentIsNullThrowsException() {
+		assertThatIllegalArgumentException().isThrownBy(() -> new SpringEnvironmentPropertySource(null))
+			.withMessage("Environment must not be null");
 	}
 
 	@Test
@@ -60,12 +66,6 @@ class SpringEnvironmentPropertySourceTests {
 	}
 
 	@Test
-	void getPropertyWhenEnvironmentIsNullReturnsNull() {
-		this.propertySource.setEnvironment(null);
-		assertThat(this.propertySource.getProperty("spring")).isNull();
-	}
-
-	@Test
 	void getPropertyWhenNotInEnvironmentReturnsNull() {
 		assertThat(this.propertySource.getProperty("nope")).isNull();
 	}
@@ -73,12 +73,6 @@ class SpringEnvironmentPropertySourceTests {
 	@Test
 	void containsPropertyWhenInEnvironmentReturnsTrue() {
 		assertThat(this.propertySource.containsProperty("spring")).isTrue();
-	}
-
-	@Test
-	void containsPropertyWhenEnvironmentIsNullReturnsFalse() {
-		this.propertySource.setEnvironment(null);
-		assertThat(this.propertySource.containsProperty("spring")).isFalse();
 	}
 
 	@Test

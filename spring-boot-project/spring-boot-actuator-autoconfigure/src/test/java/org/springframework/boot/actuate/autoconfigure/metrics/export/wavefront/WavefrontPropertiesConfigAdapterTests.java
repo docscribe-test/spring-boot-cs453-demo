@@ -66,7 +66,7 @@ class WavefrontPropertiesConfigAdapterTests extends
 	protected void whenPropertiesBatchSizeIsSetAdapterBatchSizeReturnsIt() {
 		WavefrontProperties properties = new WavefrontProperties();
 		properties.getSender().setBatchSize(10042);
-		assertThat(new WavefrontPropertiesConfigAdapter(properties).batchSize()).isEqualTo(10042);
+		assertThat(createConfigAdapter(properties.getMetrics().getExport()).batchSize()).isEqualTo(10042);
 	}
 
 	@Test
@@ -120,11 +120,11 @@ class WavefrontPropertiesConfigAdapterTests extends
 			CSP_CLIENT_CREDENTIALS,	CSP_CLIENT_CREDENTIALS
 			""")
 	void whenTokenTypeIsSetAdapterReturnsIt(String property, String wavefront) {
-		TokenType propertyTokenType = property.equals("null") ? null : TokenType.valueOf(property);
-		Type wavefrontTokenType = Type.valueOf(wavefront);
+		TokenType propertyToken = property.equals("null") ? null : TokenType.valueOf(property);
+		Type wavefrontToken = Type.valueOf(wavefront);
 		WavefrontProperties properties = new WavefrontProperties();
-		properties.setApiTokenType(propertyTokenType);
-		assertThat(new WavefrontPropertiesConfigAdapter(properties).apiTokenType()).isEqualTo(wavefrontTokenType);
+		properties.setApiTokenType(propertyToken);
+		assertThat(new WavefrontPropertiesConfigAdapter(properties).apiTokenType()).isEqualTo(wavefrontToken);
 	}
 
 }

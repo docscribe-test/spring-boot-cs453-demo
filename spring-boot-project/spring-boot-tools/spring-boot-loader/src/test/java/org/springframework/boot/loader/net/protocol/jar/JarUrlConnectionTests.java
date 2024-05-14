@@ -22,13 +22,10 @@ import java.io.FileOutputStream;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.security.Permission;
-import java.time.Instant;
-import java.time.temporal.ChronoField;
 import java.util.List;
 import java.util.Map;
 import java.util.jar.JarEntry;
@@ -240,8 +237,8 @@ class JarUrlConnectionTests {
 	}
 
 	@Test
-	void getInputStreamWhenNotNestedAndHasNoEntryThrowsException() throws Exception {
-		JarUrlConnection connection = JarUrlConnection.open(JarUrl.create(this.file));
+	void getInputStreamWhenHasNoEntryThrowsException() throws Exception {
+		JarUrlConnection connection = JarUrlConnection.open(this.url);
 		assertThatIOException().isThrownBy(() -> connection.getInputStream()).withMessage("no entry name specified");
 	}
 
@@ -257,7 +254,7 @@ class JarUrlConnectionTests {
 	}
 
 	@Test
-	void getInputStreamWhenNoEntryAndOptimizedThrowsException() throws Exception {
+	void getInputStreamWhenNoEntryAndOptimzedThrowsException() throws Exception {
 		JarUrlConnection setupConnection = JarUrlConnection.open(JarUrl.create(this.file, "nested.jar"));
 		setupConnection.connect();
 		assertThat(JarUrlConnection.jarFiles.getCached(setupConnection.getJarFileURL())).isNotNull();
@@ -268,22 +265,10 @@ class JarUrlConnectionTests {
 	}
 
 	@Test
-	void getInputStreamWhenNoEntryAndNotOptimizedThrowsException() throws Exception {
+	void getInputStreamWhenNoEntryAndNotOptimzedThrowsException() throws Exception {
 		JarUrlConnection connection = JarUrlConnection.open(JarUrl.create(this.file, "nested.jar", "missing.dat"));
 		assertThatExceptionOfType(FileNotFoundException.class).isThrownBy(connection::getInputStream)
 			.withMessageContaining("JAR entry missing.dat not found in");
-	}
-
-	@Test // gh-38047
-	void getInputStreamWhenNoEntryAndNestedReturnsFullJarInputStream() throws Exception {
-		JarUrlConnection connection = JarUrlConnection.open(JarUrl.create(this.file, "nested.jar"));
-		File outFile = new File(this.temp, "out.zip");
-		try (OutputStream out = new FileOutputStream(outFile)) {
-			connection.getInputStream().transferTo(out);
-		}
-		try (JarFile outJar = new JarFile(outFile)) {
-			assertThat(outJar.getEntry("3.dat")).isNotNull();
-		}
 	}
 
 	@Test
@@ -477,7 +462,7 @@ class JarUrlConnectionTests {
 	}
 
 	@Test
-	void openWhenNestedAndInCachedWithoutEntryAndOptimizationsEnabledReturnsNoFoundConnection() throws Exception {
+	void openWhenNestedAndInCachedWithoutEntryAndOptimzationsEnabledReturnsNoFoundConnection() throws Exception {
 		JarUrlConnection setupConnection = JarUrlConnection.open(JarUrl.create(this.file, "nested.jar"));
 		setupConnection.connect();
 		assertThat(JarUrlConnection.jarFiles.getCached(setupConnection.getJarFileURL())).isNotNull();
@@ -490,44 +475,6 @@ class JarUrlConnectionTests {
 	void openReturnsConnection() throws Exception {
 		JarUrlConnection connection = JarUrlConnection.open(this.url);
 		assertThat(connection).isNotNull();
-	}
-
-	@Test // gh-38204
-	void getLastModifiedReturnsFileModifiedTime() throws Exception {
-		JarUrlConnection connection = JarUrlConnection.open(this.url);
-		assertThat(connection.getLastModified()).isEqualTo(this.file.lastModified());
-	}
-
-	@Test // gh-38204
-	void getLastModifiedHeaderReturnsFileModifiedTime() throws IOException {
-		JarUrlConnection connection = JarUrlConnection.open(this.url);
-		URLConnection fileConnection = this.file.toURI().toURL().openConnection();
-		try {
-			assertThat(connection.getHeaderFieldDate("last-modified", 0))
-				.isEqualTo(withoutNanos(this.file.lastModified()))
-				.isEqualTo(fileConnection.getHeaderFieldDate("last-modified", 0));
-		}
-		finally {
-			fileConnection.getInputStream().close();
-		}
-	}
-
-	@Test
-	void getJarFileWhenInFolderWithEncodedCharsReturnsJarFile() throws Exception {
-		this.temp = new File(this.temp, "te#st");
-		this.temp.mkdirs();
-		this.file = new File(this.temp, "test.jar");
-		this.url = JarUrl.create(this.file, "nested.jar");
-		assertThat(this.url.toString()).contains("te%23st");
-		TestJar.create(this.file);
-		JarUrlConnection connection = JarUrlConnection.open(this.url);
-		JarFile jarFile = connection.getJarFile();
-		assertThat(jarFile).isNotNull();
-		assertThat(jarFile.getEntry("3.dat")).isNotNull();
-	}
-
-	private long withoutNanos(long epochMilli) {
-		return Instant.ofEpochMilli(epochMilli).with(ChronoField.NANO_OF_SECOND, 0).toEpochMilli();
 	}
 
 }

@@ -17,7 +17,7 @@ dependencyManagement {
 
 repositories {
 	mavenCentral()
-	maven { url 'repository' }
+	maven { url 'file:repository' }
 }
 
 dependencies {

@@ -27,8 +27,6 @@ import org.springframework.boot.autoconfigure.kafka.KafkaProperties.Cleanup;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties.IsolationLevel;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties.Listener;
 import org.springframework.boot.context.properties.source.MutuallyExclusiveConfigurationPropertiesException;
-import org.springframework.boot.ssl.DefaultSslBundleRegistry;
-import org.springframework.boot.ssl.SslBundle;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.kafka.core.CleanupConfig;
 import org.springframework.kafka.core.KafkaAdmin;
@@ -36,19 +34,16 @@ import org.springframework.kafka.listener.ContainerProperties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.mockito.Mockito.mock;
 
 /**
  * Tests for {@link KafkaProperties}.
  *
  * @author Stephane Nicoll
  * @author Madhura Bhave
- * @author Scott Frederick
  */
 class KafkaPropertiesTests {
 
-	private final SslBundle sslBundle = mock(SslBundle.class);
-
+	@SuppressWarnings("rawtypes")
 	@Test
 	void isolationLevelEnumConsistentWithKafkaVersion() {
 		org.apache.kafka.common.IsolationLevel[] original = org.apache.kafka.common.IsolationLevel.values();
@@ -80,21 +75,11 @@ class KafkaPropertiesTests {
 		properties.getSsl().setKeyStoreKey("-----BEGINkey");
 		properties.getSsl().setTrustStoreCertificates("-----BEGINtrust");
 		properties.getSsl().setKeyStoreCertificateChain("-----BEGINchain");
-		Map<String, Object> consumerProperties = properties.buildConsumerProperties(null);
+		Map<String, Object> consumerProperties = properties.buildConsumerProperties();
 		assertThat(consumerProperties).containsEntry(SslConfigs.SSL_KEYSTORE_KEY_CONFIG, "-----BEGINkey");
 		assertThat(consumerProperties).containsEntry(SslConfigs.SSL_TRUSTSTORE_CERTIFICATES_CONFIG, "-----BEGINtrust");
 		assertThat(consumerProperties).containsEntry(SslConfigs.SSL_KEYSTORE_CERTIFICATE_CHAIN_CONFIG,
 				"-----BEGINchain");
-	}
-
-	@Test
-	void sslBundleConfiguration() {
-		KafkaProperties properties = new KafkaProperties();
-		properties.getSsl().setBundle("myBundle");
-		Map<String, Object> consumerProperties = properties
-			.buildConsumerProperties(new DefaultSslBundleRegistry("myBundle", this.sslBundle));
-		assertThat(consumerProperties).containsEntry(SslConfigs.SSL_ENGINE_FACTORY_CLASS_CONFIG,
-				SslBundleSslEngineFactory.class.getName());
 	}
 
 	@Test
@@ -103,7 +88,7 @@ class KafkaPropertiesTests {
 		properties.getSsl().setKeyStoreKey("-----BEGIN");
 		properties.getSsl().setKeyStoreLocation(new ClassPathResource("ksLoc"));
 		assertThatExceptionOfType(MutuallyExclusiveConfigurationPropertiesException.class)
-			.isThrownBy(() -> properties.buildConsumerProperties(null));
+			.isThrownBy(properties::buildConsumerProperties);
 	}
 
 	@Test
@@ -112,43 +97,7 @@ class KafkaPropertiesTests {
 		properties.getSsl().setTrustStoreLocation(new ClassPathResource("tsLoc"));
 		properties.getSsl().setTrustStoreCertificates("-----BEGIN");
 		assertThatExceptionOfType(MutuallyExclusiveConfigurationPropertiesException.class)
-			.isThrownBy(() -> properties.buildConsumerProperties(null));
-	}
-
-	@Test
-	void sslPropertiesWhenKeyStoreLocationAndBundleSetShouldThrowException() {
-		KafkaProperties properties = new KafkaProperties();
-		properties.getSsl().setBundle("myBundle");
-		properties.getSsl().setKeyStoreLocation(new ClassPathResource("ksLoc"));
-		assertThatExceptionOfType(MutuallyExclusiveConfigurationPropertiesException.class).isThrownBy(
-				() -> properties.buildConsumerProperties(new DefaultSslBundleRegistry("myBundle", this.sslBundle)));
-	}
-
-	@Test
-	void sslPropertiesWhenKeyStoreKeyAndBundleSetShouldThrowException() {
-		KafkaProperties properties = new KafkaProperties();
-		properties.getSsl().setBundle("myBundle");
-		properties.getSsl().setKeyStoreKey("-----BEGIN");
-		assertThatExceptionOfType(MutuallyExclusiveConfigurationPropertiesException.class).isThrownBy(
-				() -> properties.buildConsumerProperties(new DefaultSslBundleRegistry("myBundle", this.sslBundle)));
-	}
-
-	@Test
-	void sslPropertiesWhenTrustStoreLocationAndBundleSetShouldThrowException() {
-		KafkaProperties properties = new KafkaProperties();
-		properties.getSsl().setBundle("myBundle");
-		properties.getSsl().setTrustStoreLocation(new ClassPathResource("tsLoc"));
-		assertThatExceptionOfType(MutuallyExclusiveConfigurationPropertiesException.class).isThrownBy(
-				() -> properties.buildConsumerProperties(new DefaultSslBundleRegistry("myBundle", this.sslBundle)));
-	}
-
-	@Test
-	void sslPropertiesWhenTrustStoreCertificatesAndBundleSetShouldThrowException() {
-		KafkaProperties properties = new KafkaProperties();
-		properties.getSsl().setBundle("myBundle");
-		properties.getSsl().setTrustStoreCertificates("-----BEGIN");
-		assertThatExceptionOfType(MutuallyExclusiveConfigurationPropertiesException.class).isThrownBy(
-				() -> properties.buildConsumerProperties(new DefaultSslBundleRegistry("myBundle", this.sslBundle)));
+			.isThrownBy(properties::buildConsumerProperties);
 	}
 
 	@Test

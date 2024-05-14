@@ -118,6 +118,7 @@ public class GradleBuild {
 				new File(pathOfJarContaining(ClassVisitor.class)),
 				new File(pathOfJarContaining(DependencyManagementPlugin.class)),
 				new File(pathOfJarContaining("org.jetbrains.kotlin.cli.common.PropertiesKt")),
+				new File(pathOfJarContaining("org.jetbrains.kotlin.compilerRunner.KotlinLogger")),
 				new File(pathOfJarContaining(KotlinPlatformJvmPlugin.class)),
 				new File(pathOfJarContaining(KotlinProject.class)),
 				new File(pathOfJarContaining(KotlinToolingVersion.class)),
@@ -198,8 +199,10 @@ public class GradleBuild {
 			if (this.expectDeprecationWarnings == null || (this.gradleVersion != null
 					&& this.expectDeprecationWarnings.compareTo(GradleVersion.version(this.gradleVersion)) > 0)) {
 				String buildOutput = result.getOutput();
-				for (String message : this.expectedDeprecationMessages) {
-					buildOutput = buildOutput.replaceAll(message, "");
+				if (this.expectedDeprecationMessages != null) {
+					for (String message : this.expectedDeprecationMessages) {
+						buildOutput = buildOutput.replaceAll(message, "");
+					}
 				}
 				assertThat(buildOutput).doesNotContainIgnoringCase("deprecated");
 			}

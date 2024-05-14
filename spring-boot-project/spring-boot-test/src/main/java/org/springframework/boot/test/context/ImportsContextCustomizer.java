@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,8 @@
 
 package org.springframework.boot.test.context;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -36,7 +34,6 @@ import org.springframework.boot.context.annotation.DeterminableImports;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.AnnotatedBeanDefinitionReader;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
@@ -204,7 +201,6 @@ class ImportsContextCustomizer implements ContextCustomizer {
 				registry.removeBeanDefinition(ImportsConfiguration.BEAN_NAME);
 			}
 			catch (NoSuchBeanDefinitionException ex) {
-				// Ignore
 			}
 		}
 
@@ -236,19 +232,7 @@ class ImportsContextCustomizer implements ContextCustomizer {
 				.withAnnotationFilter(this::isFilteredAnnotation)
 				.from(testClass);
 			Set<Object> determinedImports = determineImports(annotations, testClass);
-			if (determinedImports == null) {
-				this.key = Collections.unmodifiableSet(synthesize(annotations));
-			}
-			else {
-				Set<Object> key = new HashSet<>();
-				key.addAll(determinedImports);
-				Set<Annotation> componentScanning = annotations.stream()
-					.filter((annotation) -> annotation.getType().equals(ComponentScan.class))
-					.map(MergedAnnotation::synthesize)
-					.collect(Collectors.toSet());
-				key.addAll(componentScanning);
-				this.key = Collections.unmodifiableSet(key);
-			}
+			this.key = (determinedImports != null) ? determinedImports : synthesize(annotations);
 		}
 
 		private boolean isFilteredAnnotation(String typeName) {

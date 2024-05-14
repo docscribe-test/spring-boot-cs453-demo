@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,10 +21,7 @@ import java.util.List;
 import java.util.function.ObjIntConsumer;
 import java.util.stream.Collectors;
 
-import javax.management.ObjectName;
-
 import org.apache.catalina.Lifecycle;
-import org.apache.catalina.core.StandardThreadExecutor;
 import org.apache.catalina.valves.AccessLogValve;
 import org.apache.catalina.valves.ErrorReportValve;
 import org.apache.catalina.valves.RemoteIpValve;
@@ -39,7 +36,6 @@ import org.springframework.boot.autoconfigure.web.ErrorProperties.IncludeAttribu
 import org.springframework.boot.autoconfigure.web.ServerProperties;
 import org.springframework.boot.autoconfigure.web.ServerProperties.Tomcat.Accesslog;
 import org.springframework.boot.autoconfigure.web.ServerProperties.Tomcat.Remoteip;
-import org.springframework.boot.autoconfigure.web.ServerProperties.Tomcat.Threads;
 import org.springframework.boot.cloud.CloudPlatform;
 import org.springframework.boot.context.properties.PropertyMapper;
 import org.springframework.boot.web.embedded.tomcat.ConfigurableTomcatWebServerFactory;
@@ -98,7 +94,13 @@ public class TomcatWebServerFactoryCustomizer
 			.as(Long::intValue)
 			.to(factory::setBackgroundProcessorDelay);
 		customizeRemoteIpValve(factory);
-		configureExecutor(factory, properties.getThreads());
+		ServerProperties.Tomcat.Threads threadProperties = properties.getThreads();
+		map.from(threadProperties::getMax)
+			.when(this::isPositive)
+			.to((maxThreads) -> customizeMaxThreads(factory, threadProperties.getMax()));
+		map.from(threadProperties::getMinSpare)
+			.when(this::isPositive)
+			.to((minSpareThreads) -> customizeMinThreads(factory, minSpareThreads));
 		map.from(this.serverProperties.getMaxHttpRequestHeaderSize())
 			.asInt(DataSize::toBytes)
 			.when(this::isPositive)
@@ -144,19 +146,6 @@ public class TomcatWebServerFactoryCustomizer
 			.to((rejectIllegalHeader) -> customizeRejectIllegalHeader(factory, rejectIllegalHeader));
 		customizeStaticResources(factory);
 		customizeErrorReportValve(this.serverProperties.getError(), factory);
-	}
-
-	private void configureExecutor(ConfigurableTomcatWebServerFactory factory, Threads threadProperties) {
-		factory.addProtocolHandlerCustomizers((handler) -> {
-			StandardThreadExecutor executor = new StandardThreadExecutor();
-			executor.setMinSpareThreads(threadProperties.getMinSpare());
-			executor.setMaxThreads(threadProperties.getMax());
-			executor.setMaxQueueSize(threadProperties.getMaxQueueCapacity());
-			if (handler instanceof AbstractProtocol<?> protocol) {
-				executor.setNamePrefix(ObjectName.unquote(protocol.getName()) + "-exec-");
-			}
-			handler.setExecutor(executor);
-		});
 	}
 
 	private boolean isPositive(int value) {
@@ -261,6 +250,16 @@ public class TomcatWebServerFactoryCustomizer
 			return platform != null && platform.isUsingForwardHeaders();
 		}
 		return this.serverProperties.getForwardHeadersStrategy() == ServerProperties.ForwardHeadersStrategy.NATIVE;
+	}
+
+	@SuppressWarnings("rawtypes")
+	private void customizeMaxThreads(ConfigurableTomcatWebServerFactory factory, int maxThreads) {
+		customizeHandler(factory, maxThreads, AbstractProtocol.class, AbstractProtocol::setMaxThreads);
+	}
+
+	@SuppressWarnings("rawtypes")
+	private void customizeMinThreads(ConfigurableTomcatWebServerFactory factory, int minSpareThreads) {
+		customizeHandler(factory, minSpareThreads, AbstractProtocol.class, AbstractProtocol::setMinSpareThreads);
 	}
 
 	@SuppressWarnings("rawtypes")

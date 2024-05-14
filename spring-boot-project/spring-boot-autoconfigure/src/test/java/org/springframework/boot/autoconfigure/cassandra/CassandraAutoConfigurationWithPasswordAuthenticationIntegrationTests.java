@@ -34,14 +34,13 @@ import org.testcontainers.images.builder.Transferable;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.boot.testsupport.testcontainers.CassandraContainer;
 import org.springframework.util.StreamUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Tests for {@link CassandraAutoConfiguration} that only uses password authentication.
@@ -78,9 +77,8 @@ class CassandraAutoConfigurationWithPasswordAuthenticationIntegrationTests {
 	void authenticationWithInvalidCredentials() {
 		this.contextRunner
 			.withPropertyValues("spring.cassandra.username=not-a-user", "spring.cassandra.password=invalid-password")
-			.run((context) -> assertThatExceptionOfType(BeanCreationException.class)
-				.isThrownBy(() -> context.getBean(CqlSession.class))
-				.withMessageContaining("Authentication error"));
+			.run((context) -> assertThatThrownBy(() -> context.getBean(CqlSession.class))
+				.hasMessageContaining("Authentication error"));
 	}
 
 	static final class PasswordAuthenticatorCassandraContainer extends CassandraContainer {

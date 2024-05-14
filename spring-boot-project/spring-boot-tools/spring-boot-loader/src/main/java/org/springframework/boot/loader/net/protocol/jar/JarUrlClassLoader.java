@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.URLConnection;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Map;
 import java.util.Set;
@@ -46,7 +47,7 @@ public abstract class JarUrlClassLoader extends URLClassLoader {
 
 	private final Map<URL, JarFile> jarFiles = new ConcurrentHashMap<>();
 
-	private final Set<String> undefinablePackages = ConcurrentHashMap.newKeySet();
+	private final Set<String> undefinablePackages = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
 	/**
 	 * Create a new {@link LaunchedClassLoader} instance.

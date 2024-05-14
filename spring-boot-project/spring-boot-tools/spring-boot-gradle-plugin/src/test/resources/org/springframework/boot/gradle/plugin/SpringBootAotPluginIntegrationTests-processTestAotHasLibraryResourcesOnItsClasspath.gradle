@@ -6,7 +6,7 @@ plugins {
 
 repositories {
 	mavenCentral()
-	maven { url 'repository' }
+	maven { url 'file:repository' }
 }
 
 configurations.all {

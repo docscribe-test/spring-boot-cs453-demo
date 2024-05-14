@@ -40,7 +40,7 @@ class DevProfileSecurityConfiguration {
 
 	// tag::customizer[]
 	private fun <T> yourCustomAuthorization(): Customizer<T> {
-		return Customizer.withDefaults()
+		return Customizer.withDefaults<T>()
 	}
 	// end::customizer[]
 

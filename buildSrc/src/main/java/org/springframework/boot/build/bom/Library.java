@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,25 +16,11 @@
 
 package org.springframework.boot.build.bom;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.function.Function;
 
-import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.apache.maven.artifact.versioning.VersionRange;
-import org.gradle.api.Project;
-import org.gradle.api.artifacts.Configuration;
-import org.gradle.api.artifacts.Dependency;
-import org.gradle.api.artifacts.dsl.DependencyHandler;
-import org.gradle.api.artifacts.result.DependencyResult;
 
 import org.springframework.boot.build.bom.bomr.version.DependencyVersion;
 
@@ -60,14 +46,6 @@ public class Library {
 
 	private final boolean considerSnapshots;
 
-	private final VersionAlignment versionAlignment;
-
-	private final String alignsWithBom;
-
-	private final String linkRootName;
-
-	private final Map<String, Function<LibraryVersion, String>> links;
-
 	/**
 	 * Create a new {@code Library} with the given {@code name}, {@code version}, and
 	 * {@code groups}.
@@ -78,16 +56,9 @@ public class Library {
 	 * @param groups groups in the library
 	 * @param prohibitedVersions version of the library that are prohibited
 	 * @param considerSnapshots whether to consider snapshots
-	 * @param versionAlignment version alignment, if any, for the library
-	 * @param alignsWithBom the coordinates of the bom, if any, that this library should
-	 * align with
-	 * @param linkRootName the root name to use when generating link variable or
-	 * {@code null} to generate one based on the library {@code name}
-	 * @param links a list of HTTP links relevant to the library
 	 */
 	public Library(String name, String calendarName, LibraryVersion version, List<Group> groups,
-			List<ProhibitedVersion> prohibitedVersions, boolean considerSnapshots, VersionAlignment versionAlignment,
-			String alignsWithBom, String linkRootName, Map<String, Function<LibraryVersion, String>> links) {
+			List<ProhibitedVersion> prohibitedVersions, boolean considerSnapshots) {
 		this.name = name;
 		this.calendarName = (calendarName != null) ? calendarName : name;
 		this.version = version;
@@ -96,14 +67,6 @@ public class Library {
 				: name.toLowerCase(Locale.ENGLISH).replace(' ', '-') + ".version";
 		this.prohibitedVersions = prohibitedVersions;
 		this.considerSnapshots = considerSnapshots;
-		this.versionAlignment = versionAlignment;
-		this.alignsWithBom = alignsWithBom;
-		this.linkRootName = (linkRootName != null) ? linkRootName : generateLinkRootName(name);
-		this.links = Collections.unmodifiableMap(links);
-	}
-
-	private static String generateLinkRootName(String name) {
-		return name.replace("-", "").replace(" ", "-").toLowerCase();
 	}
 
 	public String getName() {
@@ -132,24 +95,6 @@ public class Library {
 
 	public boolean isConsiderSnapshots() {
 		return this.considerSnapshots;
-	}
-
-	public VersionAlignment getVersionAlignment() {
-		return this.versionAlignment;
-	}
-
-	public String getLinkRootName() {
-		return this.linkRootName;
-	}
-
-	public String getAlignsWithBom() {
-		return this.alignsWithBom;
-	}
-
-	public Map<String, String> getLinks() {
-		Map<String, String> links = new TreeMap<>();
-		this.links.forEach((name, linkFactory) -> links.put(name, linkFactory.apply(this.version)));
-		return Collections.unmodifiableMap(links);
 	}
 
 	/**
@@ -196,16 +141,6 @@ public class Library {
 			return this.reason;
 		}
 
-		public boolean isProhibited(String candidate) {
-			boolean result = false;
-			result = result
-					|| (this.range != null && this.range.containsVersion(new DefaultArtifactVersion(candidate)));
-			result = result || this.startsWith.stream().anyMatch(candidate::startsWith);
-			result = result || this.endsWith.stream().anyMatch(candidate::endsWith);
-			result = result || this.contains.stream().anyMatch(candidate::contains);
-			return result;
-		}
-
 	}
 
 	public static class LibraryVersion {
@@ -218,44 +153,6 @@ public class Library {
 
 		public DependencyVersion getVersion() {
 			return this.version;
-		}
-
-		public int[] componentInts() {
-			return Arrays.stream(parts()).mapToInt(Integer::parseInt).toArray();
-		}
-
-		public String major() {
-			return parts()[0];
-		}
-
-		public String minor() {
-			return parts()[1];
-		}
-
-		public String patch() {
-			return parts()[2];
-		}
-
-		@Override
-		public String toString() {
-			return this.version.toString();
-		}
-
-		public String toString(String separator) {
-			return this.version.toString().replace(".", separator);
-		}
-
-		public String forAntora() {
-			String[] parts = parts();
-			String result = parts[0] + "." + parts[1];
-			if (toString().endsWith("SNAPSHOT")) {
-				result += "-SNAPSHOT";
-			}
-			return result;
-		}
-
-		private String[] parts() {
-			return toString().split("[.-]");
 		}
 
 	}
@@ -368,101 +265,6 @@ public class Library {
 
 		public String getArtifactId() {
 			return this.artifactId;
-		}
-
-	}
-
-	/**
-	 * Version alignment for a library.
-	 */
-	public static class VersionAlignment {
-
-		private final String from;
-
-		private final String managedBy;
-
-		private final Project project;
-
-		private final List<Library> libraries;
-
-		private final List<Group> groups;
-
-		private Set<String> alignedVersions;
-
-		VersionAlignment(String from, String managedBy, Project project, List<Library> libraries, List<Group> groups) {
-			this.from = from;
-			this.managedBy = managedBy;
-			this.project = project;
-			this.libraries = libraries;
-			this.groups = groups;
-		}
-
-		public Set<String> resolve() {
-			if (this.managedBy == null) {
-				throw new IllegalStateException("Version alignment without managedBy is not supported");
-			}
-			if (this.alignedVersions != null) {
-				return this.alignedVersions;
-			}
-			Library managingLibrary = this.libraries.stream()
-				.filter((candidate) -> this.managedBy.equals(candidate.getName()))
-				.findFirst()
-				.orElseThrow(() -> new IllegalStateException("Managing library '" + this.managedBy + "' not found."));
-			Map<String, String> versions = resolveAligningDependencies(managingLibrary);
-			Set<String> versionsInLibrary = new HashSet<>();
-			for (Group group : this.groups) {
-				for (Module module : group.getModules()) {
-					String version = versions.get(group.getId() + ":" + module.getName());
-					if (version != null) {
-						versionsInLibrary.add(version);
-					}
-				}
-				for (String plugin : group.getPlugins()) {
-					String version = versions.get(group.getId() + ":" + plugin);
-					if (version != null) {
-						versionsInLibrary.add(version);
-					}
-				}
-			}
-			this.alignedVersions = versionsInLibrary;
-			return this.alignedVersions;
-		}
-
-		private Map<String, String> resolveAligningDependencies(Library manager) {
-			DependencyHandler dependencyHandler = this.project.getDependencies();
-			List<Dependency> boms = manager.getGroups()
-				.stream()
-				.flatMap((group) -> group.getBoms()
-					.stream()
-					.map((bom) -> dependencyHandler
-						.platform(group.getId() + ":" + bom + ":" + manager.getVersion().getVersion())))
-				.toList();
-			List<Dependency> dependencies = new ArrayList<>();
-			dependencies.addAll(boms);
-			dependencies.add(dependencyHandler.create(this.from));
-			Configuration alignmentConfiguration = this.project.getConfigurations()
-				.detachedConfiguration(dependencies.toArray(new Dependency[0]));
-			Map<String, String> versions = new HashMap<>();
-			for (DependencyResult dependency : alignmentConfiguration.getIncoming()
-				.getResolutionResult()
-				.getAllDependencies()) {
-				versions.put(dependency.getFrom().getModuleVersion().getModule().toString(),
-						dependency.getFrom().getModuleVersion().getVersion());
-			}
-			return versions;
-		}
-
-		String getFrom() {
-			return this.from;
-		}
-
-		String getManagedBy() {
-			return this.managedBy;
-		}
-
-		@Override
-		public String toString() {
-			return "version from dependencies of " + this.from + " that is managed by " + this.managedBy;
 		}
 
 	}

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.springframework.boot.actuate.autoconfigure.endpoint.web.documentatio
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -93,7 +94,7 @@ class MappingsEndpointServletDocumentationTests extends AbstractEndpointDocument
 					.optional()
 					.type(JsonFieldType.OBJECT),
 				parentIdField());
-		List<FieldDescriptor> dispatcherServletFields = new ArrayList<>(List.of(
+		List<FieldDescriptor> dispatcherServletFields = new ArrayList<>(Arrays.asList(
 				fieldWithPath("*")
 					.description("Dispatcher servlet mappings, if any, keyed by dispatcher servlet bean name."),
 				fieldWithPath("*.[].details").optional()
@@ -101,7 +102,7 @@ class MappingsEndpointServletDocumentationTests extends AbstractEndpointDocument
 					.description("Additional implementation-specific details about the mapping. Optional."),
 				fieldWithPath("*.[].handler").description("Handler for the mapping."),
 				fieldWithPath("*.[].predicate").description("Predicate for the mapping.")));
-		List<FieldDescriptor> requestMappingConditions = List.of(
+		List<FieldDescriptor> requestMappingConditions = Arrays.asList(
 				requestMappingConditionField("").description("Details of the request mapping conditions.").optional(),
 				requestMappingConditionField(".consumes").description("Details of the consumes condition"),
 				requestMappingConditionField(".consumes.[].mediaType").description("Consumed media type."),
@@ -121,7 +122,7 @@ class MappingsEndpointServletDocumentationTests extends AbstractEndpointDocument
 				requestMappingConditionField(".produces").description("Details of the produces condition."),
 				requestMappingConditionField(".produces.[].mediaType").description("Produced media type."),
 				requestMappingConditionField(".produces.[].negated").description("Whether the media type is negated."));
-		List<FieldDescriptor> handlerMethod = List.of(
+		List<FieldDescriptor> handlerMethod = Arrays.asList(
 				fieldWithPath("*.[].details.handlerMethod").optional()
 					.type(JsonFieldType.OBJECT)
 					.description("Details of the method, if any, that will handle requests to this mapping."),

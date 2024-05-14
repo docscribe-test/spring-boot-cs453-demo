@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.springframework.boot.loader.zip;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Collection;
+import java.util.List;
 
 /**
  * A virtual {@link DataBlock} build from a collection of other {@link DataBlock}
@@ -28,13 +29,9 @@ import java.util.Collection;
  */
 class VirtualDataBlock implements DataBlock {
 
-	private DataBlock[] parts;
-
-	private long[] offsets;
+	private List<DataBlock> parts;
 
 	private long size;
-
-	private volatile int lastReadPart = 0;
 
 	/**
 	 * Create a new {@link VirtualDataBlock} instance. The {@link #setParts(Collection)}
@@ -58,16 +55,12 @@ class VirtualDataBlock implements DataBlock {
 	 * @throws IOException on I/O error
 	 */
 	protected void setParts(Collection<? extends DataBlock> parts) throws IOException {
-		this.parts = parts.toArray(DataBlock[]::new);
-		this.offsets = new long[parts.size()];
+		this.parts = List.copyOf(parts);
 		long size = 0;
-		int i = 0;
 		for (DataBlock part : parts) {
-			this.offsets[i++] = size;
 			size += part.size();
 		}
 		this.size = size;
-
 	}
 
 	@Override
@@ -80,30 +73,20 @@ class VirtualDataBlock implements DataBlock {
 		if (pos < 0 || pos >= this.size) {
 			return -1;
 		}
-		int lastReadPart = this.lastReadPart;
-		int partIndex = 0;
 		long offset = 0;
 		int result = 0;
-		if (pos >= this.offsets[lastReadPart]) {
-			partIndex = lastReadPart;
-			offset = this.offsets[lastReadPart];
-		}
-		while (partIndex < this.parts.length) {
-			DataBlock part = this.parts[partIndex];
+		for (DataBlock part : this.parts) {
 			while (pos >= offset && pos < offset + part.size()) {
 				int count = part.read(dst, pos - offset);
 				result += Math.max(count, 0);
 				if (count <= 0 || !dst.hasRemaining()) {
-					this.lastReadPart = partIndex;
 					return result;
 				}
 				pos += count;
 			}
 			offset += part.size();
-			partIndex++;
 		}
 		return result;
-
 	}
 
 }

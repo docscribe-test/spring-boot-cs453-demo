@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,28 +18,19 @@ package org.springframework.boot.autoconfigure.pulsar;
 
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import org.apache.pulsar.client.admin.PulsarAdminBuilder;
-import org.apache.pulsar.client.api.Authentication;
-import org.apache.pulsar.client.api.AuthenticationFactory;
-import org.apache.pulsar.client.api.AutoClusterFailoverBuilder;
 import org.apache.pulsar.client.api.ClientBuilder;
 import org.apache.pulsar.client.api.ConsumerBuilder;
 import org.apache.pulsar.client.api.ProducerBuilder;
 import org.apache.pulsar.client.api.PulsarClientException.UnsupportedAuthenticationException;
 import org.apache.pulsar.client.api.ReaderBuilder;
-import org.apache.pulsar.client.api.ServiceUrlProvider;
-import org.apache.pulsar.client.impl.AutoClusterFailover.AutoClusterFailoverBuilderImpl;
 
 import org.springframework.boot.context.properties.PropertyMapper;
-import org.springframework.pulsar.core.PulsarTemplate;
 import org.springframework.pulsar.listener.PulsarContainerProperties;
 import org.springframework.pulsar.reader.PulsarReaderContainerProperties;
 import org.springframework.util.StringUtils;
@@ -49,7 +40,6 @@ import org.springframework.util.StringUtils;
  *
  * @author Chris Bono
  * @author Phillip Webb
- * @author Swamy Mavuri
  */
 final class PulsarPropertiesMapper {
 
@@ -62,52 +52,11 @@ final class PulsarPropertiesMapper {
 	void customizeClientBuilder(ClientBuilder clientBuilder, PulsarConnectionDetails connectionDetails) {
 		PulsarProperties.Client properties = this.properties.getClient();
 		PropertyMapper map = PropertyMapper.get().alwaysApplyingWhenNonNull();
+		map.from(connectionDetails::getBrokerUrl).to(clientBuilder::serviceUrl);
 		map.from(properties::getConnectionTimeout).to(timeoutProperty(clientBuilder::connectionTimeout));
 		map.from(properties::getOperationTimeout).to(timeoutProperty(clientBuilder::operationTimeout));
 		map.from(properties::getLookupTimeout).to(timeoutProperty(clientBuilder::lookupTimeout));
-		map.from(this.properties.getTransaction()::isEnabled).whenTrue().to(clientBuilder::enableTransaction);
-		customizeAuthentication(properties.getAuthentication(), clientBuilder::authentication);
-		customizeServiceUrlProviderBuilder(clientBuilder::serviceUrl, clientBuilder::serviceUrlProvider, properties,
-				connectionDetails);
-	}
-
-	private void customizeServiceUrlProviderBuilder(Consumer<String> serviceUrlConsumer,
-			Consumer<ServiceUrlProvider> serviceUrlProviderConsumer, PulsarProperties.Client properties,
-			PulsarConnectionDetails connectionDetails) {
-		PulsarProperties.Failover failoverProperties = properties.getFailover();
-		if (failoverProperties.getBackupClusters().isEmpty()) {
-			serviceUrlConsumer.accept(connectionDetails.getBrokerUrl());
-			return;
-		}
-		Map<String, Authentication> secondaryAuths = getSecondaryAuths(failoverProperties);
-		AutoClusterFailoverBuilder autoClusterFailoverBuilder = new AutoClusterFailoverBuilderImpl();
-		PropertyMapper map = PropertyMapper.get().alwaysApplyingWhenNonNull();
-		map.from(connectionDetails::getBrokerUrl).to(autoClusterFailoverBuilder::primary);
-		map.from(secondaryAuths::keySet).as(ArrayList::new).to(autoClusterFailoverBuilder::secondary);
-		map.from(failoverProperties::getPolicy).to(autoClusterFailoverBuilder::failoverPolicy);
-		map.from(failoverProperties::getDelay).to(timeoutProperty(autoClusterFailoverBuilder::failoverDelay));
-		map.from(failoverProperties::getSwitchBackDelay)
-			.to(timeoutProperty(autoClusterFailoverBuilder::switchBackDelay));
-		map.from(failoverProperties::getCheckInterval).to(timeoutProperty(autoClusterFailoverBuilder::checkInterval));
-		map.from(secondaryAuths).to(autoClusterFailoverBuilder::secondaryAuthentication);
-		serviceUrlProviderConsumer.accept(autoClusterFailoverBuilder.build());
-	}
-
-	private Map<String, Authentication> getSecondaryAuths(PulsarProperties.Failover properties) {
-		Map<String, Authentication> secondaryAuths = new LinkedHashMap<>();
-		properties.getBackupClusters().forEach((backupCluster) -> {
-			PulsarProperties.Authentication authenticationProperties = backupCluster.getAuthentication();
-			if (authenticationProperties.getPluginClassName() == null) {
-				secondaryAuths.put(backupCluster.getServiceUrl(), null);
-			}
-			else {
-				customizeAuthentication(authenticationProperties, (authPluginClassName, authParams) -> {
-					Authentication authentication = AuthenticationFactory.create(authPluginClassName, authParams);
-					secondaryAuths.put(backupCluster.getServiceUrl(), authentication);
-				});
-			}
-		});
-		return secondaryAuths;
+		customizeAuthentication(clientBuilder::authentication, properties.getAuthentication());
 	}
 
 	void customizeAdminBuilder(PulsarAdminBuilder adminBuilder, PulsarConnectionDetails connectionDetails) {
@@ -117,31 +66,18 @@ final class PulsarPropertiesMapper {
 		map.from(properties::getConnectionTimeout).to(timeoutProperty(adminBuilder::connectionTimeout));
 		map.from(properties::getReadTimeout).to(timeoutProperty(adminBuilder::readTimeout));
 		map.from(properties::getRequestTimeout).to(timeoutProperty(adminBuilder::requestTimeout));
-		customizeAuthentication(properties.getAuthentication(), adminBuilder::authentication);
+		customizeAuthentication(adminBuilder::authentication, properties.getAuthentication());
 	}
 
-	private void customizeAuthentication(PulsarProperties.Authentication properties, AuthenticationConsumer action) {
-		String pluginClassName = properties.getPluginClassName();
-		if (StringUtils.hasText(pluginClassName)) {
+	private void customizeAuthentication(AuthenticationConsumer authentication,
+			PulsarProperties.Authentication properties) {
+		if (StringUtils.hasText(properties.getPluginClassName())) {
 			try {
-				action.accept(pluginClassName, getAuthenticationParamsJson(properties.getParam()));
+				authentication.accept(properties.getPluginClassName(), properties.getParam());
 			}
 			catch (UnsupportedAuthenticationException ex) {
 				throw new IllegalStateException("Unable to configure Pulsar authentication", ex);
 			}
-		}
-	}
-
-	private String getAuthenticationParamsJson(Map<String, String> params) {
-		Map<String, String> sortedParams = new TreeMap<>(params);
-		try {
-			return sortedParams.entrySet()
-				.stream()
-				.map((entry) -> "\"%s\":\"%s\"".formatted(entry.getKey(), entry.getValue()))
-				.collect(Collectors.joining(",", "{", "}"));
-		}
-		catch (Exception ex) {
-			throw new IllegalStateException("Could not convert auth parameters to encoded string", ex);
 		}
 	}
 
@@ -157,10 +93,6 @@ final class PulsarPropertiesMapper {
 		map.from(properties::isChunkingEnabled).to(producerBuilder::enableChunking);
 		map.from(properties::getCompressionType).to(producerBuilder::compressionType);
 		map.from(properties::getAccessMode).to(producerBuilder::accessMode);
-	}
-
-	<T> void customizeTemplate(PulsarTemplate<T> template) {
-		template.transactions().setEnabled(this.properties.getTransaction().isEnabled());
 	}
 
 	<T> void customizeConsumerBuilder(ConsumerBuilder<T> consumerBuilder) {
@@ -189,7 +121,6 @@ final class PulsarPropertiesMapper {
 	void customizeContainerProperties(PulsarContainerProperties containerProperties) {
 		customizePulsarContainerConsumerSubscriptionProperties(containerProperties);
 		customizePulsarContainerListenerProperties(containerProperties);
-		containerProperties.transactions().setEnabled(this.properties.getTransaction().isEnabled());
 	}
 
 	private void customizePulsarContainerConsumerSubscriptionProperties(PulsarContainerProperties containerProperties) {
@@ -227,7 +158,8 @@ final class PulsarPropertiesMapper {
 
 	private interface AuthenticationConsumer {
 
-		void accept(String authPluginClassName, String authParamString) throws UnsupportedAuthenticationException;
+		void accept(String authPluginClassName, Map<String, String> authParams)
+				throws UnsupportedAuthenticationException;
 
 	}
 

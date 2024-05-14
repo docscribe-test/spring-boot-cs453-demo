@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.configurationprocessor.metadata.ConfigurationMetadata;
 import org.springframework.boot.configurationprocessor.metadata.ItemMetadata;
 import org.springframework.boot.configurationprocessor.metadata.Metadata;
-import org.springframework.boot.configurationsample.deprecation.Dbcp2Configuration;
-import org.springframework.boot.configurationsample.record.ExampleRecord;
 import org.springframework.boot.configurationsample.record.RecordWithGetter;
 import org.springframework.boot.configurationsample.recursive.RecursiveProperties;
 import org.springframework.boot.configurationsample.simple.ClassWithNestedProperties;
@@ -508,28 +506,6 @@ class ConfigurationMetadataAnnotationProcessorTests extends AbstractMetadataGene
 		ConfigurationMetadata metadata = compile(RecordWithGetter.class);
 		assertThat(metadata).has(Metadata.withProperty("record-with-getter.alpha"));
 		assertThat(metadata).doesNotHave(Metadata.withProperty("record-with-getter.bravo"));
-	}
-
-	@Test
-	void shouldNotMarkDbcp2UsernameOrPasswordAsDeprecated() {
-		ConfigurationMetadata metadata = compile(Dbcp2Configuration.class);
-		assertThat(metadata).has(Metadata.withProperty("spring.datasource.dbcp2.username").withNoDeprecation());
-		assertThat(metadata).has(Metadata.withProperty("spring.datasource.dbcp2.password").withNoDeprecation());
-	}
-
-	@Test
-	void recordPropertiesWithDescriptions() {
-		ConfigurationMetadata metadata = compile(ExampleRecord.class);
-		assertThat(metadata).has(Metadata.withProperty("record.descriptions.some-string", String.class)
-			.withDescription("very long description that doesn't fit single line and is indented"));
-		assertThat(metadata).has(Metadata.withProperty("record.descriptions.some-integer", Integer.class)
-			.withDescription("description with @param and @ pitfalls"));
-		assertThat(metadata).has(Metadata.withProperty("record.descriptions.some-boolean", Boolean.class)
-			.withDescription("description with extra spaces"));
-		assertThat(metadata).has(Metadata.withProperty("record.descriptions.some-long", Long.class)
-			.withDescription("description without space after asterisk"));
-		assertThat(metadata).has(Metadata.withProperty("record.descriptions.some-byte", Byte.class)
-			.withDescription("last description in Javadoc"));
 	}
 
 }

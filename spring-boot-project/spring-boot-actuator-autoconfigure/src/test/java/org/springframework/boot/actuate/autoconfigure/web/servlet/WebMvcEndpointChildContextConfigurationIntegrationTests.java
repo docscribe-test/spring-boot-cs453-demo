@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import java.util.function.Function;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
-import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import reactor.core.publisher.Mono;
@@ -144,8 +143,7 @@ class WebMvcEndpointChildContextConfigurationIntegrationTests {
 					(value) -> assertThat(value).asString().contains("MethodArgumentNotValidException"));
 			assertThat(body).hasEntrySatisfying("message",
 					(value) -> assertThat(value).asString().contains("Validation failed"));
-			assertThat(body).hasEntrySatisfying("errors",
-					(value) -> assertThat(value).asInstanceOf(InstanceOfAssertFactories.LIST).isNotEmpty());
+			assertThat(body).hasEntrySatisfying("errors", (value) -> assertThat(value).asList().isNotEmpty());
 		}));
 	}
 
@@ -217,7 +215,6 @@ class WebMvcEndpointChildContextConfigurationIntegrationTests {
 	}
 
 	@RestControllerEndpoint(id = "failController")
-	@SuppressWarnings("removal")
 	static class FailingControllerEndpoint {
 
 		@GetMapping

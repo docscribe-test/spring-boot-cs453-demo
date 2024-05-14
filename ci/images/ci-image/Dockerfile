@@ -1,5 +1,4 @@
-ARG  DOCKER_PROXY_CACHE=
-FROM ${DOCKER_PROXY_CACHE}ubuntu:jammy-20240427
+FROM ubuntu:jammy-20230916
 
 ADD setup.sh /setup.sh
 ADD get-jdk-url.sh /get-jdk-url.sh
@@ -13,3 +12,7 @@ ENV LC_ALL en_US.UTF-8
 ENV JAVA_HOME /opt/openjdk
 ENV PATH $JAVA_HOME/bin:$PATH
 ADD docker-lib.sh /docker-lib.sh
+
+ADD build-release-scripts.sh /build-release-scripts.sh
+ADD releasescripts /release-scripts
+RUN ./build-release-scripts.sh

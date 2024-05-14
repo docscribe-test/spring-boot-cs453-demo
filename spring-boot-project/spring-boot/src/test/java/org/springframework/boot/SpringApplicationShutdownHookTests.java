@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
@@ -36,9 +35,9 @@ import org.springframework.context.support.AbstractApplicationContext;
 import org.springframework.context.support.GenericApplicationContext;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Tests for {@link SpringApplicationShutdownHook}.
@@ -52,7 +51,7 @@ class SpringApplicationShutdownHookTests {
 	@Test
 	void shutdownHookIsNotAddedUntilContextIsRegistered() {
 		TestSpringApplicationShutdownHook shutdownHook = new TestSpringApplicationShutdownHook();
-		shutdownHook.enableShutdownHookAddition();
+		shutdownHook.enableShutdowHookAddition();
 		assertThat(shutdownHook.isRuntimeShutdownHookAdded()).isFalse();
 		ConfigurableApplicationContext context = new GenericApplicationContext();
 		shutdownHook.registerApplicationContext(context);
@@ -62,7 +61,7 @@ class SpringApplicationShutdownHookTests {
 	@Test
 	void shutdownHookIsNotAddedUntilHandlerIsRegistered() {
 		TestSpringApplicationShutdownHook shutdownHook = new TestSpringApplicationShutdownHook();
-		shutdownHook.enableShutdownHookAddition();
+		shutdownHook.enableShutdowHookAddition();
 		assertThat(shutdownHook.isRuntimeShutdownHookAdded()).isFalse();
 		shutdownHook.getHandlers().add(() -> {
 		});
@@ -75,7 +74,7 @@ class SpringApplicationShutdownHookTests {
 		shutdownHook.getHandlers().add(() -> {
 		});
 		assertThat(shutdownHook.isRuntimeShutdownHookAdded()).isFalse();
-		shutdownHook.enableShutdownHookAddition();
+		shutdownHook.enableShutdowHookAddition();
 		shutdownHook.getHandlers().add(() -> {
 		});
 		assertThat(shutdownHook.isRuntimeShutdownHookAdded()).isTrue();
@@ -113,8 +112,8 @@ class SpringApplicationShutdownHookTests {
 		closing.await();
 		Thread shutdownThread = new Thread(shutdownHook);
 		shutdownThread.start();
-		// Shutdown thread should start waiting for context to become inactive
-		Awaitility.await().atMost(Duration.ofSeconds(30)).until(shutdownThread::getState, State.WAITING::equals);
+		// Shutdown thread should become blocked on monitor held by context thread
+		Awaitility.await().atMost(Duration.ofSeconds(30)).until(shutdownThread::getState, State.BLOCKED::equals);
 		// Allow context thread to proceed, unblocking shutdown thread
 		proceedWithClose.countDown();
 		contextThread.join();
@@ -187,7 +186,8 @@ class SpringApplicationShutdownHookTests {
 		ConfigurableApplicationContext context = new GenericApplicationContext();
 		shutdownHook.registerApplicationContext(context);
 		context.refresh();
-		assertThatIllegalStateException().isThrownBy(() -> shutdownHook.deregisterFailedApplicationContext(context));
+		assertThatThrownBy(() -> shutdownHook.deregisterFailedApplicationContext(context))
+			.isInstanceOf(IllegalStateException.class);
 		assertThat(shutdownHook.isApplicationContextRegistered(context)).isTrue();
 	}
 
@@ -197,7 +197,7 @@ class SpringApplicationShutdownHookTests {
 		GenericApplicationContext context = new GenericApplicationContext();
 		shutdownHook.registerApplicationContext(context);
 		context.registerBean(FailingBean.class);
-		assertThatExceptionOfType(BeanCreationException.class).isThrownBy(context::refresh);
+		assertThatThrownBy(context::refresh).isInstanceOf(BeanCreationException.class);
 		assertThat(shutdownHook.isApplicationContextRegistered(context)).isTrue();
 		shutdownHook.deregisterFailedApplicationContext(context);
 		assertThat(shutdownHook.isApplicationContextRegistered(context)).isFalse();
@@ -253,7 +253,7 @@ class SpringApplicationShutdownHookTests {
 			}
 			if (this.proceedWithClose != null) {
 				try {
-					this.proceedWithClose.await(1, TimeUnit.MINUTES);
+					this.proceedWithClose.await();
 				}
 				catch (InterruptedException ex) {
 					Thread.currentThread().interrupt();

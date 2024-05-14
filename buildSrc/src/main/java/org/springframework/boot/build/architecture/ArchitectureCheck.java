@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 the original author or authors.
+ * Copyright 2022-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,24 +18,18 @@ package org.springframework.boot.build.architecture;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URLDecoder;
-import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import com.tngtech.archunit.base.DescribedPredicate;
-import com.tngtech.archunit.core.domain.JavaCall;
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaClass.Predicates;
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.domain.JavaMethod;
 import com.tngtech.archunit.core.domain.JavaParameter;
 import com.tngtech.archunit.core.domain.properties.CanBeAnnotated;
-import com.tngtech.archunit.core.domain.properties.HasName;
-import com.tngtech.archunit.core.domain.properties.HasOwner.Predicates.With;
-import com.tngtech.archunit.core.domain.properties.HasParameterTypes;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.lang.ArchCondition;
 import com.tngtech.archunit.lang.ArchRule;
@@ -62,14 +56,10 @@ import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.SkipWhenEmpty;
 import org.gradle.api.tasks.TaskAction;
 
-import org.springframework.util.ResourceUtils;
-
 /**
  * {@link Task} that checks for architecture problems.
  *
  * @author Andy Wilkinson
- * @author Yanming Zhou
- * @author Scott Frederick
  */
 public abstract class ArchitectureCheck extends DefaultTask {
 
@@ -81,9 +71,7 @@ public abstract class ArchitectureCheck extends DefaultTask {
 				allBeanPostProcessorBeanMethodsShouldBeStaticAndHaveParametersThatWillNotCausePrematureInitialization(),
 				allBeanFactoryPostProcessorBeanMethodsShouldBeStaticAndHaveNoParameters(),
 				noClassesShouldCallStepVerifierStepVerifyComplete(),
-				noClassesShouldConfigureDefaultStepVerifierTimeout(), noClassesShouldCallCollectorsToList(),
-				noClassesShouldCallURLEncoderWithStringEncoding(), noClassesShouldCallURLDecoderWithStringEncoding(),
-				noClassesShouldLoadResourcesUsingResourceUtils());
+				noClassesShouldConfigureDefaultStepVerifierTimeout(), noClassesShouldCallCollectorsToList());
 		getRuleDescriptions().set(getRules().map((rules) -> rules.stream().map(ArchRule::getDescription).toList()));
 	}
 
@@ -101,7 +89,7 @@ public abstract class ArchitectureCheck extends DefaultTask {
 		if (!violations.isEmpty()) {
 			StringBuilder report = new StringBuilder();
 			for (EvaluationResult violation : violations) {
-				report.append(violation.getFailureReport());
+				report.append(violation.getFailureReport().toString());
 				report.append(String.format("%n"));
 			}
 			Files.writeString(outputFile.toPath(), report.toString(), StandardOpenOption.CREATE,
@@ -200,32 +188,6 @@ public abstract class ArchitectureCheck extends DefaultTask {
 			.should()
 			.callMethod(Collectors.class, "toList")
 			.because("java.util.stream.Stream.toList() should be used instead");
-	}
-
-	private ArchRule noClassesShouldCallURLEncoderWithStringEncoding() {
-		return ArchRuleDefinition.noClasses()
-			.should()
-			.callMethod(URLEncoder.class, "encode", String.class, String.class)
-			.because("java.net.URLEncoder.encode(String s, Charset charset) should be used instead");
-	}
-
-	private ArchRule noClassesShouldCallURLDecoderWithStringEncoding() {
-		return ArchRuleDefinition.noClasses()
-			.should()
-			.callMethod(URLDecoder.class, "decode", String.class, String.class)
-			.because("java.net.URLDecoder.decode(String s, Charset charset) should be used instead");
-	}
-
-	private ArchRule noClassesShouldLoadResourcesUsingResourceUtils() {
-		return ArchRuleDefinition.noClasses()
-			.should()
-			.callMethodWhere(JavaCall.Predicates.target(With.owner(Predicates.type(ResourceUtils.class)))
-				.and(JavaCall.Predicates.target(HasName.Predicates.name("getURL")))
-				.and(JavaCall.Predicates.target(HasParameterTypes.Predicates.rawParameterTypes(String.class)))
-				.or(JavaCall.Predicates.target(With.owner(Predicates.type(ResourceUtils.class)))
-					.and(JavaCall.Predicates.target(HasName.Predicates.name("getFile")))
-					.and(JavaCall.Predicates.target(HasParameterTypes.Predicates.rawParameterTypes(String.class)))))
-			.because("org.springframework.boot.io.ApplicationResourceLoader should be used instead");
 	}
 
 	public void setClasses(FileCollection classes) {

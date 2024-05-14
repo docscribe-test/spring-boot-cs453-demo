@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,6 @@ import org.springframework.web.servlet.DispatcherServlet;
 public class ServletEndpointManagementContextConfiguration {
 
 	@Bean
-	@SuppressWarnings("removal")
 	public IncludeExcludeEndpointFilter<ExposableServletEndpoint> servletExposeExcludePropertyEndpointFilter(
 			WebEndpointProperties properties) {
 		WebEndpointProperties.Exposure exposure = properties.getExposure();
@@ -57,7 +56,6 @@ public class ServletEndpointManagementContextConfiguration {
 
 	@Configuration(proxyBeanMethods = false)
 	@ConditionalOnClass(DispatcherServlet.class)
-	@SuppressWarnings("removal")
 	public static class WebMvcServletEndpointManagementContextConfiguration {
 
 		@Bean
@@ -72,7 +70,6 @@ public class ServletEndpointManagementContextConfiguration {
 	@Configuration(proxyBeanMethods = false)
 	@ConditionalOnClass(ResourceConfig.class)
 	@ConditionalOnMissingClass("org.springframework.web.servlet.DispatcherServlet")
-	@SuppressWarnings("removal")
 	public static class JerseyServletEndpointManagementContextConfiguration {
 
 		@Bean

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,16 +17,12 @@
 package org.springframework.boot;
 
 import java.lang.StackWalker.StackFrame;
-import java.lang.management.ManagementFactory;
-import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
-import java.util.IdentityHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -35,26 +31,21 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.crac.management.CRaCMXBean;
 
 import org.springframework.aot.AotDetector;
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
-import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.groovy.GroovyBeanDefinitionReader;
 import org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.BeanNameGenerator;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
-import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
 import org.springframework.boot.Banner.Mode;
 import org.springframework.boot.context.properties.bind.Bindable;
@@ -74,15 +65,10 @@ import org.springframework.context.annotation.AnnotationConfigUtils;
 import org.springframework.context.annotation.ClassPathBeanDefinitionScanner;
 import org.springframework.context.annotation.ConfigurationClassPostProcessor;
 import org.springframework.context.aot.AotApplicationContextInitializer;
-import org.springframework.context.event.ApplicationContextEvent;
 import org.springframework.context.event.ContextClosedEvent;
-import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.support.AbstractApplicationContext;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.GenericTypeResolver;
-import org.springframework.core.NativeDetector;
-import org.springframework.core.OrderComparator;
-import org.springframework.core.OrderComparator.OrderSourceProvider;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.AnnotationAwareOrderComparator;
 import org.springframework.core.annotation.Order;
@@ -102,6 +88,7 @@ import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
+import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.util.function.ThrowingConsumer;
 import org.springframework.util.function.ThrowingSupplier;
@@ -178,9 +165,6 @@ import org.springframework.util.function.ThrowingSupplier;
  * @author Ethan Rubinson
  * @author Chris Bono
  * @author Moritz Halbritter
- * @author Tadaya Tsuyukubo
- * @author Lasse Wulff
- * @author Yanming Zhou
  * @since 1.0.0
  * @see #run(Class, String[])
  * @see #run(Class[], String[])
@@ -316,10 +300,10 @@ public class SpringApplication {
 	 * @return a running {@link ApplicationContext}
 	 */
 	public ConfigurableApplicationContext run(String... args) {
-		Startup startup = Startup.create();
 		if (this.registerShutdownHook) {
-			SpringApplication.shutdownHook.enableShutdownHookAddition();
+			SpringApplication.shutdownHook.enableShutdowHookAddition();
 		}
+		long startTime = System.nanoTime();
 		DefaultBootstrapContext bootstrapContext = createBootstrapContext();
 		ConfigurableApplicationContext context = null;
 		configureHeadlessProperty();
@@ -334,23 +318,32 @@ public class SpringApplication {
 			prepareContext(bootstrapContext, context, environment, listeners, applicationArguments, printedBanner);
 			refreshContext(context);
 			afterRefresh(context, applicationArguments);
-			startup.started();
+			Duration timeTakenToStartup = Duration.ofNanos(System.nanoTime() - startTime);
 			if (this.logStartupInfo) {
-				new StartupInfoLogger(this.mainApplicationClass).logStarted(getApplicationLog(), startup);
+				new StartupInfoLogger(this.mainApplicationClass).logStarted(getApplicationLog(), timeTakenToStartup);
 			}
-			listeners.started(context, startup.timeTakenToStarted());
+			listeners.started(context, timeTakenToStartup);
 			callRunners(context, applicationArguments);
 		}
 		catch (Throwable ex) {
-			throw handleRunFailure(context, ex, listeners);
+			if (ex instanceof AbandonedRunException) {
+				throw ex;
+			}
+			handleRunFailure(context, ex, listeners);
+			throw new IllegalStateException(ex);
 		}
 		try {
 			if (context.isRunning()) {
-				listeners.ready(context, startup.ready());
+				Duration timeTakenToReady = Duration.ofNanos(System.nanoTime() - startTime);
+				listeners.ready(context, timeTakenToReady);
 			}
 		}
 		catch (Throwable ex) {
-			throw handleRunFailure(context, ex, null);
+			if (ex instanceof AbandonedRunException) {
+				throw ex;
+			}
+			handleRunFailure(context, ex, null);
+			throw new IllegalStateException(ex);
 		}
 		return context;
 	}
@@ -421,7 +414,9 @@ public class SpringApplication {
 			context.addBeanFactoryPostProcessor(new LazyInitializationBeanFactoryPostProcessor());
 		}
 		if (this.keepAlive) {
-			context.addApplicationListener(new KeepAlive());
+			KeepAlive keepAlive = new KeepAlive();
+			keepAlive.start();
+			context.addApplicationListener(keepAlive);
 		}
 		context.addBeanFactoryPostProcessor(new PropertySourceOrderingBeanFactoryPostProcessor(context));
 		if (!AotDetector.useGeneratedArtifacts()) {
@@ -439,9 +434,6 @@ public class SpringApplication {
 					initializers.stream().filter(AotApplicationContextInitializer.class::isInstance).toList());
 			if (aotInitializers.isEmpty()) {
 				String initializerClassName = this.mainApplicationClass.getName() + "__ApplicationContextInitializer";
-				if (!ClassUtils.isPresent(initializerClassName, getClassLoader())) {
-					throw new AotInitializerNotFoundException(this.mainApplicationClass, initializerClassName);
-				}
 				aotInitializers.add(AotApplicationContextInitializer.forInitializerClasses(initializerClassName));
 			}
 			initializers.removeAll(aotInitializers);
@@ -762,47 +754,41 @@ public class SpringApplication {
 	protected void afterRefresh(ConfigurableApplicationContext context, ApplicationArguments args) {
 	}
 
-	private void callRunners(ConfigurableApplicationContext context, ApplicationArguments args) {
-		ConfigurableListableBeanFactory beanFactory = context.getBeanFactory();
-		String[] beanNames = beanFactory.getBeanNamesForType(Runner.class);
-		Map<Runner, String> instancesToBeanNames = new IdentityHashMap<>();
-		for (String beanName : beanNames) {
-			instancesToBeanNames.put(beanFactory.getBean(beanName, Runner.class), beanName);
-		}
-		Comparator<Object> comparator = getOrderComparator(beanFactory)
-			.withSourceProvider(new FactoryAwareOrderSourceProvider(beanFactory, instancesToBeanNames));
-		instancesToBeanNames.keySet().stream().sorted(comparator).forEach((runner) -> callRunner(runner, args));
-	}
-
-	private OrderComparator getOrderComparator(ConfigurableListableBeanFactory beanFactory) {
-		Comparator<?> dependencyComparator = (beanFactory instanceof DefaultListableBeanFactory defaultListableBeanFactory)
-				? defaultListableBeanFactory.getDependencyComparator() : null;
-		return (dependencyComparator instanceof OrderComparator orderComparator) ? orderComparator
-				: AnnotationAwareOrderComparator.INSTANCE;
-	}
-
-	private void callRunner(Runner runner, ApplicationArguments args) {
-		if (runner instanceof ApplicationRunner) {
-			callRunner(ApplicationRunner.class, runner, (applicationRunner) -> applicationRunner.run(args));
-		}
-		if (runner instanceof CommandLineRunner) {
-			callRunner(CommandLineRunner.class, runner,
-					(commandLineRunner) -> commandLineRunner.run(args.getSourceArgs()));
+	private void callRunners(ApplicationContext context, ApplicationArguments args) {
+		List<Object> runners = new ArrayList<>();
+		runners.addAll(context.getBeansOfType(ApplicationRunner.class).values());
+		runners.addAll(context.getBeansOfType(CommandLineRunner.class).values());
+		AnnotationAwareOrderComparator.sort(runners);
+		for (Object runner : new LinkedHashSet<>(runners)) {
+			if (runner instanceof ApplicationRunner applicationRunner) {
+				callRunner(applicationRunner, args);
+			}
+			if (runner instanceof CommandLineRunner commandLineRunner) {
+				callRunner(commandLineRunner, args);
+			}
 		}
 	}
 
-	@SuppressWarnings("unchecked")
-	private <R extends Runner> void callRunner(Class<R> type, Runner runner, ThrowingConsumer<R> call) {
-		call.throwing(
-				(message, ex) -> new IllegalStateException("Failed to execute " + ClassUtils.getShortName(type), ex))
-			.accept((R) runner);
+	private void callRunner(ApplicationRunner runner, ApplicationArguments args) {
+		try {
+			(runner).run(args);
+		}
+		catch (Exception ex) {
+			throw new IllegalStateException("Failed to execute ApplicationRunner", ex);
+		}
 	}
 
-	private RuntimeException handleRunFailure(ConfigurableApplicationContext context, Throwable exception,
+	private void callRunner(CommandLineRunner runner, ApplicationArguments args) {
+		try {
+			(runner).run(args.getSourceArgs());
+		}
+		catch (Exception ex) {
+			throw new IllegalStateException("Failed to execute CommandLineRunner", ex);
+		}
+	}
+
+	private void handleRunFailure(ConfigurableApplicationContext context, Throwable exception,
 			SpringApplicationRunListeners listeners) {
-		if (exception instanceof AbandonedRunException abandonedRunException) {
-			return abandonedRunException;
-		}
 		try {
 			try {
 				handleExitCode(context, exception);
@@ -821,8 +807,7 @@ public class SpringApplication {
 		catch (Exception ex) {
 			logger.warn("Unable to close ApplicationContext", ex);
 		}
-		return (exception instanceof RuntimeException runtimeException) ? runtimeException
-				: new IllegalStateException(exception);
+		ReflectionUtils.rethrowRuntimeException(exception);
 	}
 
 	private Collection<SpringBootExceptionReporter> getExceptionReporters(ConfigurableApplicationContext context) {
@@ -848,16 +833,7 @@ public class SpringApplication {
 			// Continue with normal handling of the original failure
 		}
 		if (logger.isErrorEnabled()) {
-			if (NativeDetector.inNativeImage()) {
-				// Depending on how early the failure was, logging may not work in a
-				// native image so we output the stack trace directly to System.out
-				// instead.
-				System.out.println("Application run failed");
-				failure.printStackTrace(System.out);
-			}
-			else {
-				logger.error("Application run failed", failure);
-			}
+			logger.error("Application run failed", failure);
 			registerLoggedException(failure);
 		}
 	}
@@ -1321,8 +1297,7 @@ public class SpringApplication {
 	}
 
 	/**
-	 * Set whether to keep the application alive even if there are no more non-daemon
-	 * threads.
+	 * Whether to keep the application alive even if there are no more non-daemon threads.
 	 * @param keepAlive whether to keep the application alive even if there are no more
 	 * non-daemon threads
 	 * @since 3.2.0
@@ -1527,7 +1502,7 @@ public class SpringApplication {
 		 * {@link SpringApplicationRunListener} to capture {@link Running} application
 		 * details.
 		 */
-		private static final class RunListener implements SpringApplicationRunListener, Running {
+		private static class RunListener implements SpringApplicationRunListener, Running {
 
 			private final List<ConfigurableApplicationContext> contexts = Collections
 				.synchronizedList(new ArrayList<>());
@@ -1638,9 +1613,6 @@ public class SpringApplication {
 
 	}
 
-	/**
-	 * {@link SpringApplicationHook} decorator that ensures the hook is only used once.
-	 */
 	private static final class SingleUseSpringApplicationHook implements SpringApplicationHook {
 
 		private final AtomicBoolean used = new AtomicBoolean();
@@ -1659,179 +1631,30 @@ public class SpringApplication {
 	}
 
 	/**
-	 * Starts a non-daemon thread to keep the JVM alive on {@link ContextRefreshedEvent}.
-	 * Stops the thread on {@link ContextClosedEvent}.
+	 * A non-daemon thread to keep the JVM alive. Reacts to {@link ContextClosedEvent} to
+	 * stop itself when the application context is closed.
 	 */
-	private static final class KeepAlive implements ApplicationListener<ApplicationContextEvent> {
+	private static final class KeepAlive extends Thread implements ApplicationListener<ContextClosedEvent> {
 
-		private final AtomicReference<Thread> thread = new AtomicReference<>();
-
-		@Override
-		public void onApplicationEvent(ApplicationContextEvent event) {
-			if (event instanceof ContextRefreshedEvent) {
-				startKeepAliveThread();
-			}
-			else if (event instanceof ContextClosedEvent) {
-				stopKeepAliveThread();
-			}
+		KeepAlive() {
+			setName("keep-alive");
+			setDaemon(false);
 		}
 
-		private void startKeepAliveThread() {
-			Thread thread = new Thread(() -> {
-				while (true) {
-					try {
-						Thread.sleep(Long.MAX_VALUE);
-					}
-					catch (InterruptedException ex) {
-						break;
-					}
+		@Override
+		public void onApplicationEvent(ContextClosedEvent event) {
+			interrupt();
+		}
+
+		@Override
+		public void run() {
+			while (true) {
+				try {
+					Thread.sleep(Long.MAX_VALUE);
 				}
-			});
-			if (this.thread.compareAndSet(null, thread)) {
-				thread.setDaemon(false);
-				thread.setName("keep-alive");
-				thread.start();
-			}
-		}
-
-		private void stopKeepAliveThread() {
-			Thread thread = this.thread.getAndSet(null);
-			if (thread == null) {
-				return;
-			}
-			thread.interrupt();
-		}
-
-	}
-
-	/**
-	 * Strategy used to handle startup concerns.
-	 */
-	abstract static class Startup {
-
-		private Duration timeTakenToStarted;
-
-		protected abstract long startTime();
-
-		protected abstract Long processUptime();
-
-		protected abstract String action();
-
-		final Duration started() {
-			long now = System.currentTimeMillis();
-			this.timeTakenToStarted = Duration.ofMillis(now - startTime());
-			return this.timeTakenToStarted;
-		}
-
-		Duration timeTakenToStarted() {
-			return this.timeTakenToStarted;
-		}
-
-		private Duration ready() {
-			long now = System.currentTimeMillis();
-			return Duration.ofMillis(now - startTime());
-		}
-
-		static Startup create() {
-			ClassLoader classLoader = Startup.class.getClassLoader();
-			return (ClassUtils.isPresent("jdk.crac.management.CRaCMXBean", classLoader)
-					&& ClassUtils.isPresent("org.crac.management.CRaCMXBean", classLoader))
-							? new CoordinatedRestoreAtCheckpointStartup() : new StandardStartup();
-		}
-
-	}
-
-	/**
-	 * Standard {@link Startup} implementation.
-	 */
-	private static final class StandardStartup extends Startup {
-
-		private final Long startTime = System.currentTimeMillis();
-
-		@Override
-		protected long startTime() {
-			return this.startTime;
-		}
-
-		@Override
-		protected Long processUptime() {
-			try {
-				return ManagementFactory.getRuntimeMXBean().getUptime();
-			}
-			catch (Throwable ex) {
-				return null;
-			}
-		}
-
-		@Override
-		protected String action() {
-			return "Started";
-		}
-
-	}
-
-	/**
-	 * Coordinated-Restore-At-Checkpoint {@link Startup} implementation.
-	 */
-	private static final class CoordinatedRestoreAtCheckpointStartup extends Startup {
-
-		private final StandardStartup fallback = new StandardStartup();
-
-		@Override
-		protected Long processUptime() {
-			long uptime = CRaCMXBean.getCRaCMXBean().getUptimeSinceRestore();
-			return (uptime >= 0) ? uptime : this.fallback.processUptime();
-		}
-
-		@Override
-		protected String action() {
-			return (restoreTime() >= 0) ? "Restored" : this.fallback.action();
-		}
-
-		private long restoreTime() {
-			return CRaCMXBean.getCRaCMXBean().getRestoreTime();
-		}
-
-		@Override
-		protected long startTime() {
-			long restoreTime = restoreTime();
-			return (restoreTime >= 0) ? restoreTime : this.fallback.startTime();
-		}
-
-	}
-
-	/**
-	 * {@link OrderSourceProvider} used to obtain factory method and target type order
-	 * sources. Based on internal {@link DefaultListableBeanFactory} code.
-	 */
-	private class FactoryAwareOrderSourceProvider implements OrderSourceProvider {
-
-		private final ConfigurableBeanFactory beanFactory;
-
-		private final Map<?, String> instancesToBeanNames;
-
-		FactoryAwareOrderSourceProvider(ConfigurableBeanFactory beanFactory, Map<?, String> instancesToBeanNames) {
-			this.beanFactory = beanFactory;
-			this.instancesToBeanNames = instancesToBeanNames;
-		}
-
-		@Override
-		public Object getOrderSource(Object obj) {
-			String beanName = this.instancesToBeanNames.get(obj);
-			return (beanName != null) ? getOrderSource(beanName, obj.getClass()) : null;
-		}
-
-		private Object getOrderSource(String beanName, Class<?> instanceType) {
-			try {
-				RootBeanDefinition beanDefinition = (RootBeanDefinition) this.beanFactory
-					.getMergedBeanDefinition(beanName);
-				Method factoryMethod = beanDefinition.getResolvedFactoryMethod();
-				Class<?> targetType = beanDefinition.getTargetType();
-				targetType = (targetType != instanceType) ? targetType : null;
-				return Stream.of(factoryMethod, targetType).filter(Objects::nonNull).toArray();
-			}
-			catch (NoSuchBeanDefinitionException ex) {
-				return null;
+				catch (InterruptedException ex) {
+					break;
+				}
 			}
 		}
 

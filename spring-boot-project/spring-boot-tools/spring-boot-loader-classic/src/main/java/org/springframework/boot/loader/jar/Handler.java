@@ -140,7 +140,6 @@ public class Handler extends URLStreamHandler {
 				return connection;
 			}
 			catch (IOException ex) {
-				// Ignore
 			}
 		}
 		return null;
@@ -155,7 +154,6 @@ public class Handler extends URLStreamHandler {
 				}
 			}
 			catch (Exception ex) {
-				// Ignore
 			}
 		}
 		return false;
@@ -176,7 +174,6 @@ public class Handler extends URLStreamHandler {
 			}
 		}
 		catch (Exception ex) {
-			// Ignore
 		}
 		return null;
 	}
@@ -428,7 +425,6 @@ public class Handler extends URLStreamHandler {
 					}
 				}
 				catch (Exception ex) {
-					// Ignore
 				}
 			}
 			finally {

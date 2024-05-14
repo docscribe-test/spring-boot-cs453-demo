@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,6 @@ import java.io.StringReader;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.jar.JarOutputStream;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.gradle.testkit.runner.BuildResult;
 import org.gradle.testkit.runner.TaskOutcome;
@@ -193,12 +191,11 @@ class JavaPluginActionIntegrationTests {
 	}
 
 	@TestTemplate
-	void productionRuntimeClasspathIsConfiguredWithAttributesThatMatchRuntimeClasspath() {
-		String output = this.gradleBuild.build("build").getOutput();
-		Matcher matcher = Pattern.compile("runtimeClasspath: (\\[.*])").matcher(output);
-		assertThat(matcher.find()).as("%s found in %s", matcher, output).isTrue();
-		String attributes = matcher.group(1);
-		assertThat(output).contains("productionRuntimeClasspath: " + attributes);
+	void productionRuntimeClasspathIsConfiguredWithAttributes() {
+		assertThat(this.gradleBuild.build("build").getOutput()).contains("3 productionRuntimeClasspath attributes:")
+			.contains("org.gradle.usage: java-runtime")
+			.contains("org.gradle.libraryelements: jar")
+			.contains("org.gradle.dependency.bundling: external");
 	}
 
 	@TestTemplate

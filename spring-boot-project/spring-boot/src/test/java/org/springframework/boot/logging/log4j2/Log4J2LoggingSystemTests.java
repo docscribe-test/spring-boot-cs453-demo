@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -493,20 +493,6 @@ class Log4J2LoggingSystemTests extends AbstractLoggingSystemTests {
 	}
 
 	@Test
-	void environmentIsUpdatedUponReinitialization() {
-		MockEnvironment environment = new MockEnvironment();
-		environment.setProperty("spring", "boot: one");
-		this.loggingSystem.beforeInitialize();
-		this.loggingSystem.initialize(new LoggingInitializationContext(environment), null, null);
-		assertThat(PropertiesUtil.getProperties().getStringProperty("spring")).isEqualTo("boot: one");
-		this.loggingSystem.cleanUp();
-		this.environment.setProperty("spring", "boot: two");
-		this.loggingSystem.beforeInitialize();
-		this.loggingSystem.initialize(this.initializationContext, null, null);
-		assertThat(PropertiesUtil.getProperties().getStringProperty("spring")).isEqualTo("boot: two");
-	}
-
-	@Test
 	void nonFileUrlsAreResolvedUsingLog4J2UrlConnectionFactory() {
 		this.loggingSystem.beforeInitialize();
 		assertThatIllegalStateException()
@@ -579,7 +565,7 @@ class Log4J2LoggingSystemTests extends AbstractLoggingSystemTests {
 	}
 
 	@Test
-	void applicationNameLoggingToConsoleWhenHasApplicationName(CapturedOutput output) {
+	void applicationNameLoggingWhenHasApplicationName(CapturedOutput output) {
 		this.environment.setProperty("spring.application.name", "myapp");
 		this.loggingSystem.setStandardConfigLocations(false);
 		this.loggingSystem.beforeInitialize();
@@ -589,74 +575,14 @@ class Log4J2LoggingSystemTests extends AbstractLoggingSystemTests {
 	}
 
 	@Test
-	void applicationNameLoggingToConsoleWhenHasApplicationNameWithParenthesis(CapturedOutput output) {
-		this.environment.setProperty("spring.application.name", "myapp (dev)");
-		this.loggingSystem.setStandardConfigLocations(false);
-		this.loggingSystem.beforeInitialize();
-		this.loggingSystem.initialize(this.initializationContext, null, null);
-		this.logger.info("Hello world");
-		assertThat(getLineWithText(output, "Hello world")).contains("[myapp (dev)] ");
-	}
-
-	@Test
-	void applicationNameLoggingToConsoleWhenDisabled(CapturedOutput output) {
-		this.environment.setProperty("spring.application.name", "application-name");
-		this.environment.setProperty("logging.include-application-name", "false");
-		this.loggingSystem.setStandardConfigLocations(false);
-		this.loggingSystem.beforeInitialize();
-		this.loggingSystem.initialize(this.initializationContext, null, null);
-		this.logger.info("Hello world");
-		assertThat(getLineWithText(output, "Hello world")).doesNotContain("${sys:LOGGED_APPLICATION_NAME}")
-			.doesNotContain("myapp");
-	}
-
-	@Test
-	void applicationNameLoggingToFileWhenHasApplicationName() {
+	void applicationNameLoggingWhenDisabled(CapturedOutput output) {
 		this.environment.setProperty("spring.application.name", "myapp");
-		new LoggingSystemProperties(this.environment).apply();
-		File file = new File(tmpDir(), "log4j2-test.log");
-		LogFile logFile = getLogFile(file.getPath(), null);
-		this.loggingSystem.setStandardConfigLocations(false);
-		this.loggingSystem.beforeInitialize();
-		this.loggingSystem.initialize(this.initializationContext, null, logFile);
-		this.logger.info("Hello world");
-		assertThat(getLineWithText(file, "Hello world")).contains("[myapp] ");
-	}
-
-	@Test
-	void applicationNameLoggingToFileWhenHasApplicationNameWithParenthesis() {
-		this.environment.setProperty("spring.application.name", "myapp (dev)");
-		new LoggingSystemProperties(this.environment).apply();
-		File file = new File(tmpDir(), "log4j2-test.log");
-		LogFile logFile = getLogFile(file.getPath(), null);
-		this.loggingSystem.setStandardConfigLocations(false);
-		this.loggingSystem.beforeInitialize();
-		this.loggingSystem.initialize(this.initializationContext, null, logFile);
-		this.logger.info("Hello world");
-		assertThat(getLineWithText(file, "Hello world")).contains("[myapp (dev)] ");
-	}
-
-	@Test
-	void applicationNameLoggingToFileWhenDisabled() {
-		this.environment.setProperty("spring.application.name", "application-name");
 		this.environment.setProperty("logging.include-application-name", "false");
-		new LoggingSystemProperties(this.environment).apply();
-		File file = new File(tmpDir(), "log4j2-test.log");
-		LogFile logFile = getLogFile(file.getPath(), null);
 		this.loggingSystem.setStandardConfigLocations(false);
-		this.loggingSystem.beforeInitialize();
-		this.loggingSystem.initialize(this.initializationContext, null, logFile);
-		this.logger.info("Hello world");
-		assertThat(getLineWithText(file, "Hello world")).doesNotContain("${sys:LOGGED_APPLICATION_NAME}")
-			.doesNotContain("myapp");
-	}
-
-	@Test
-	void shouldNotContainAnsiEscapeCodes(CapturedOutput output) {
 		this.loggingSystem.beforeInitialize();
 		this.loggingSystem.initialize(this.initializationContext, null, null);
 		this.logger.info("Hello world");
-		assertThat(output).doesNotContain("\033[");
+		assertThat(getLineWithText(output, "Hello world")).doesNotContain("myapp");
 	}
 
 	private String getRelativeClasspathLocation(String fileName) {

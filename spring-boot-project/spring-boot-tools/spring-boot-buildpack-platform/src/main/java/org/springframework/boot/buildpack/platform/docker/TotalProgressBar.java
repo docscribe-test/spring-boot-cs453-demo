@@ -19,8 +19,6 @@ package org.springframework.boot.buildpack.platform.docker;
 import java.io.PrintStream;
 import java.util.function.Consumer;
 
-import org.springframework.util.StringUtils;
-
 /**
  * Utility to render a simple progress bar based on consumed {@link TotalProgressEvent}
  * objects.
@@ -65,7 +63,7 @@ public class TotalProgressBar implements Consumer<TotalProgressEvent> {
 	public TotalProgressBar(String prefix, char progressChar, boolean bookend, PrintStream out) {
 		this.progressChar = progressChar;
 		this.bookend = bookend;
-		if (StringUtils.hasLength(prefix)) {
+		if (prefix != null && !prefix.isEmpty()) {
 			out.print(prefix);
 			out.print(" ");
 		}

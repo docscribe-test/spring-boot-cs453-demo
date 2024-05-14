@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,6 @@ import static org.mockito.Mockito.mock;
  *
  * @author Brian Clozel
  * @author Yunkun Huang
- * @author Lasse Wulff
  */
 class ServletWebServerFactoryCustomizerTests {
 
@@ -71,13 +70,6 @@ class ServletWebServerFactoryCustomizerTests {
 		this.properties.getServlet().setApplicationDisplayName("TestName");
 		this.customizer.customize(factory);
 		then(factory).should().setDisplayName("TestName");
-	}
-
-	@Test
-	void testCustomMimeMappings() {
-		ConfigurableServletWebServerFactory factory = mock(ConfigurableServletWebServerFactory.class);
-		this.customizer.customize(factory);
-		then(factory).should().setMimeMappings(this.properties.getMimeMappings());
 	}
 
 	@Test

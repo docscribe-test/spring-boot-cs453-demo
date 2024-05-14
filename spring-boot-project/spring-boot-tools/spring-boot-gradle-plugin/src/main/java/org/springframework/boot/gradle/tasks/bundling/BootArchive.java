@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,6 @@ import org.springframework.boot.loader.tools.LoaderImplementation;
  * A Spring Boot "fat" archive task.
  *
  * @author Andy Wilkinson
- * @author Moritz Halbritter
  * @since 2.0.0
  */
 public interface BootArchive extends Task {
@@ -144,14 +143,5 @@ public interface BootArchive extends Task {
 	@Input
 	@Optional
 	Property<LoaderImplementation> getLoaderImplementation();
-
-	/**
-	 * Returns whether the JAR tools should be included as a dependency in the layered
-	 * archive.
-	 * @return whether the JAR tools should be included
-	 * @since 3.3.0
-	 */
-	@Input
-	Property<Boolean> getIncludeTools();
 
 }

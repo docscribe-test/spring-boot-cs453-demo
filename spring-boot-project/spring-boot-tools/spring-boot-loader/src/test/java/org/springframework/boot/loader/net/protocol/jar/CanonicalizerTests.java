@@ -35,12 +35,12 @@ class CanonicalizerTests {
 	}
 
 	@Test
-	void canonicalizeWhenHasEmbeddedSlashDotDotSlash() {
+	void canonicalizeWhenHasEmbdeddSlashDotDotSlash() {
 		assertThat(Canonicalizer.canonicalize("/foo/../bar/bif/bam/../../baz")).isEqualTo("/bar/baz");
 	}
 
 	@Test
-	void canonicalizeWhenHasEmbeddedSlashDotSlash() {
+	void canonicalizeWhenHasEmbdeddSlashDotSlash() {
 		assertThat(Canonicalizer.canonicalize("/foo/./bar/bif/bam/././baz")).isEqualTo("/foo/bar/bif/bam/baz");
 	}
 

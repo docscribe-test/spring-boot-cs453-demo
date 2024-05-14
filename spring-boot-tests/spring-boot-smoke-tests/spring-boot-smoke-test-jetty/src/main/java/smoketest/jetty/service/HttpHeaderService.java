@@ -16,7 +16,7 @@
 
 package smoketest.jetty.service;
 
-import smoketest.jetty.util.StringUtil;
+import smoketest.jetty.util.RandomStringUtil;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -28,12 +28,16 @@ public class HttpHeaderService {
 	private int maxHttpResponseHeaderSize;
 
 	/**
-	 * Generates a header value, which is longer than
-	 * 'server.jetty.max-http-response-header-size'.
-	 * @return the header value
+	 * Generates random data. The data is:
+	 * <ol>
+	 * <li>is longer than configured
+	 * <code>server.jetty.max-http-response-header-size</code></li>
+	 * <li>is url encoded by base 64 encode the random value</li>
+	 * </ol>
+	 * @return a base64 encoded string of random bytes
 	 */
 	public String getHeaderValue() {
-		return StringUtil.repeat('A', this.maxHttpResponseHeaderSize + 1);
+		return RandomStringUtil.getRandomBase64EncodedString(this.maxHttpResponseHeaderSize + 1);
 	}
 
 }

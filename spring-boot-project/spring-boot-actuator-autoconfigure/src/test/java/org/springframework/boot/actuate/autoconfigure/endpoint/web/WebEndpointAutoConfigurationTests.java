@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -95,7 +95,6 @@ class WebEndpointAutoConfigurationTests {
 	}
 
 	@Test
-	@SuppressWarnings("removal")
 	void webApplicationConfiguresEndpointDiscoverer() {
 		this.contextRunner.run((context) -> {
 			assertThat(context).hasSingleBean(ControllerEndpointDiscoverer.class);
@@ -110,13 +109,11 @@ class WebEndpointAutoConfigurationTests {
 	}
 
 	@Test
-	@SuppressWarnings("removal")
 	void contextShouldConfigureServletEndpointDiscoverer() {
 		this.contextRunner.run((context) -> assertThat(context).hasSingleBean(ServletEndpointDiscoverer.class));
 	}
 
 	@Test
-	@SuppressWarnings("removal")
 	void contextWhenNotServletShouldNotConfigureServletEndpointDiscoverer() {
 		new ApplicationContextRunner().withConfiguration(CONFIGURATIONS)
 			.run((context) -> assertThat(context).doesNotHaveBean(ServletEndpointDiscoverer.class));
@@ -128,7 +125,7 @@ class WebEndpointAutoConfigurationTests {
 		@Override
 		public String getRootPath(EndpointId endpointId) {
 			if (endpointId.toString().endsWith("one")) {
-				return "1/" + endpointId;
+				return "1/" + endpointId.toString();
 			}
 			return null;
 		}

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,9 +28,7 @@ import org.testcontainers.utility.DockerImageName;
  */
 public final class DockerImageNames {
 
-	private static final String ACTIVE_MQ_VERSION = "5.18.3";
-
-	private static final String ARTEMIS_VERSION = "2.31.2";
+	private static final String ACTIVE_MQ_VERSION = "5.18.0";
 
 	private static final String CASSANDRA_VERSION = "3.11.10";
 
@@ -50,15 +48,11 @@ public final class DockerImageNames {
 
 	private static final String NEO4J_VERSION = "4.4.11";
 
-	private static final String OPEN_LDAP_VERSION = "1.5.0";
-
-	private static final String ORACLE_FREE_VERSION = "23.3-slim";
-
 	private static final String ORACLE_XE_VERSION = "18.4.0-slim";
 
 	private static final String OPENTELEMETRY_VERSION = "0.75.0";
 
-	private static final String PULSAR_VERSION = "3.2.0";
+	private static final String PULSAR_VERSION = "3.1.0";
 
 	private static final String POSTGRESQL_VERSION = "14.0";
 
@@ -70,7 +64,7 @@ public final class DockerImageNames {
 
 	private static final String REGISTRY_VERSION = "2.7.1";
 
-	private static final String ZIPKIN_VERSION = "3.0.6";
+	private static final String ZIPKIN_VERSION = "2.24.1";
 
 	private DockerImageNames() {
 	}
@@ -81,22 +75,6 @@ public final class DockerImageNames {
 	 */
 	public static DockerImageName activeMq() {
 		return DockerImageName.parse("symptoma/activemq").withTag(ACTIVE_MQ_VERSION);
-	}
-
-	/**
-	 * Return a {@link DockerImageName} suitable for running ActiveMQ.
-	 * @return a docker image name for running activeMq
-	 */
-	public static DockerImageName activeMqClassic() {
-		return DockerImageName.parse("apache/activemq-classic").withTag(ACTIVE_MQ_VERSION);
-	}
-
-	/**
-	 * Return a {@link DockerImageName} suitable for running Artemis.
-	 * @return a docker image name for running artemis
-	 */
-	public static DockerImageName artemis() {
-		return DockerImageName.parse("apache/activemq-artemis").withTag(ARTEMIS_VERSION);
 	}
 
 	/**
@@ -140,14 +118,6 @@ public final class DockerImageNames {
 	}
 
 	/**
-	 * Return a {@link DockerImageName} suitable for running OpenLDAP.
-	 * @return a docker image name for running OpenLDAP
-	 */
-	public static DockerImageName openLdap() {
-		return DockerImageName.parse("osixia/openldap").withTag(OPEN_LDAP_VERSION);
-	}
-
-	/**
 	 * Return a {@link DockerImageName} suitable for running MariaDB.
 	 * @return a docker image name for running MariaDB
 	 */
@@ -183,14 +153,6 @@ public final class DockerImageNames {
 	 * Return a {@link DockerImageName} suitable for running the Oracle database.
 	 * @return a docker image name for running the Oracle database
 	 */
-	public static DockerImageName oracleFree() {
-		return DockerImageName.parse("gvenzl/oracle-free").withTag(ORACLE_FREE_VERSION);
-	}
-
-	/**
-	 * Return a {@link DockerImageName} suitable for running the Oracle database.
-	 * @return a docker image name for running the Oracle database
-	 */
 	public static DockerImageName oracleXe() {
 		return DockerImageName.parse("gvenzl/oracle-xe").withTag(ORACLE_XE_VERSION);
 	}
@@ -198,6 +160,7 @@ public final class DockerImageNames {
 	/**
 	 * Return a {@link DockerImageName} suitable for running OpenTelemetry.
 	 * @return a docker image name for running OpenTelemetry
+	 * @since 3.2.0
 	 */
 	public static DockerImageName opentelemetry() {
 		return DockerImageName.parse("otel/opentelemetry-collector-contrib").withTag(OPENTELEMETRY_VERSION);
@@ -240,7 +203,9 @@ public final class DockerImageNames {
 	 * @return a docker image name for running redpanda
 	 */
 	public static DockerImageName redpanda() {
-		return DockerImageName.parse("redpandadata/redpanda").withTag(REDPANDA_VERSION);
+		return DockerImageName.parse("redpandadata/redpanda")
+			.withTag(REDPANDA_VERSION)
+			.asCompatibleSubstituteFor("docker.redpanda.com/redpandadata/redpanda");
 	}
 
 	/**

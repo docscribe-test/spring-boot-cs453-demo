@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,17 +17,15 @@
 package org.springframework.boot.loader.net.protocol.nested;
 
 import java.io.File;
-import java.net.URI;
 import java.net.URL;
-import java.nio.file.Path;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.boot.loader.net.util.UrlDecoder;
 
 /**
- * A location obtained from a {@code nested:} {@link URL} consisting of a jar file and an
- * optional nested entry.
+ * A location obtained from a {@code nested:} {@link URL} consisting of a jar file and a
+ * nested entry.
  * <p>
  * The syntax of a nested JAR URL is: <pre>
  * nestedjar:&lt;path&gt;/!{entry}
@@ -45,24 +43,22 @@ import org.springframework.boot.loader.net.util.UrlDecoder;
  * uncompressed entry that contains the nested jar, or a directory entry. The entry must
  * not start with a {@code '/'}.
  *
- * @param path the path to the zip that contains the nested entry
+ * @param file the zip file that contains the nested entry
  * @param nestedEntryName the nested entry name
  * @author Phillip Webb
- * @author Andy Wilkinson
  * @since 3.2.0
  */
-public record NestedLocation(Path path, String nestedEntryName) {
+public record NestedLocation(File file, String nestedEntryName) {
 
-	private static final Map<String, NestedLocation> locationCache = new ConcurrentHashMap<>();
+	private static final Map<String, NestedLocation> cache = new ConcurrentHashMap<>();
 
-	private static final Map<String, Path> pathCache = new ConcurrentHashMap<>();
-
-	public NestedLocation(Path path, String nestedEntryName) {
-		if (path == null) {
-			throw new IllegalArgumentException("'path' must not be null");
+	public NestedLocation {
+		if (file == null) {
+			throw new IllegalArgumentException("'file' must not be null");
 		}
-		this.path = path;
-		this.nestedEntryName = (nestedEntryName != null && !nestedEntryName.isEmpty()) ? nestedEntryName : null;
+		if (nestedEntryName == null || nestedEntryName.trim().isEmpty()) {
+			throw new IllegalArgumentException("'nestedEntryName' must not be empty");
+		}
 	}
 
 	/**
@@ -75,60 +71,28 @@ public record NestedLocation(Path path, String nestedEntryName) {
 		if (url == null || !"nested".equalsIgnoreCase(url.getProtocol())) {
 			throw new IllegalArgumentException("'url' must not be null and must use 'nested' protocol");
 		}
-		return parse(UrlDecoder.decode(url.toString().substring(7)));
+		return parse(UrlDecoder.decode(url.getPath()));
 	}
 
-	/**
-	 * Create a new {@link NestedLocation} from the given URI.
-	 * @param uri the nested URI
-	 * @return a new {@link NestedLocation} instance
-	 * @throws IllegalArgumentException if the URI is not valid
-	 */
-	public static NestedLocation fromUri(URI uri) {
-		if (uri == null || !"nested".equalsIgnoreCase(uri.getScheme())) {
-			throw new IllegalArgumentException("'uri' must not be null and must use 'nested' scheme");
+	static NestedLocation parse(String path) {
+		if (path == null || path.isEmpty()) {
+			throw new IllegalArgumentException("'path' must not be empty");
 		}
-		return parse(uri.getSchemeSpecificPart());
-	}
-
-	static NestedLocation parse(String location) {
-		if (location == null || location.isEmpty()) {
-			throw new IllegalArgumentException("'location' must not be empty");
+		int index = path.lastIndexOf("/!");
+		if (index == -1) {
+			throw new IllegalArgumentException("'path' must contain '/!'");
 		}
-		return locationCache.computeIfAbsent(location, (key) -> create(location));
+		return cache.computeIfAbsent(path, (l) -> create(index, l));
 	}
 
-	private static NestedLocation create(String location) {
-		int index = location.lastIndexOf("/!");
-		String locationPath = (index != -1) ? location.substring(0, index) : location;
-		String nestedEntryName = (index != -1) ? location.substring(index + 2) : null;
-		return new NestedLocation((!locationPath.isEmpty()) ? asPath(locationPath) : null, nestedEntryName);
-	}
-
-	private static Path asPath(String locationPath) {
-		return pathCache.computeIfAbsent(locationPath,
-				(key) -> Path.of((!isWindows()) ? locationPath : fixWindowsLocationPath(locationPath)));
-	}
-
-	private static boolean isWindows() {
-		return File.separatorChar == '\\';
-	}
-
-	private static String fixWindowsLocationPath(String locationPath) {
-		// Same logic as Java's internal WindowsUriSupport class
-		if (locationPath.length() > 2 && locationPath.charAt(2) == ':') {
-			return locationPath.substring(1);
-		}
-		// Deal with Jetty's org.eclipse.jetty.util.URIUtil#correctURI(URI)
-		if (locationPath.startsWith("///") && locationPath.charAt(4) == ':') {
-			return locationPath.substring(3);
-		}
-		return locationPath;
+	private static NestedLocation create(int index, String location) {
+		String file = location.substring(0, index);
+		String nestedEntryName = location.substring(index + 2);
+		return new NestedLocation((!file.isEmpty()) ? new File(file) : null, nestedEntryName);
 	}
 
 	static void clearCache() {
-		locationCache.clear();
-		pathCache.clear();
+		cache.clear();
 	}
 
 }

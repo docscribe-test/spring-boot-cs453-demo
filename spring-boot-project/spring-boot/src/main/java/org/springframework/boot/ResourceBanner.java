@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -86,8 +86,8 @@ public class ResourceBanner implements Banner {
 	 */
 	protected List<PropertyResolver> getPropertyResolvers(Environment environment, Class<?> sourceClass) {
 		MutablePropertySources sources = new MutablePropertySources();
-		if (environment instanceof ConfigurableEnvironment configurableEnvironment) {
-			configurableEnvironment.getPropertySources().forEach(sources::addLast);
+		if (environment instanceof ConfigurableEnvironment) {
+			((ConfigurableEnvironment) environment).getPropertySources().forEach(sources::addLast);
 		}
 		sources.addLast(getTitleSource(sourceClass));
 		sources.addLast(getAnsiSource());

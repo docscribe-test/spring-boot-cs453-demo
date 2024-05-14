@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -174,22 +174,6 @@ class UserDetailsServiceAutoConfigurationTests {
 		this.contextRunner
 			.withClassLoader(new FilteredClassLoader(ClientRegistrationRepository.class, OpaqueTokenIntrospector.class))
 			.run(((context) -> assertThat(context).doesNotHaveBean(InMemoryUserDetailsManager.class)));
-	}
-
-	@Test
-	void userDetailsServiceWhenRelyingPartyRegistrationRepositoryPresentAndUsernameConfigured() {
-		this.contextRunner
-			.withClassLoader(new FilteredClassLoader(ClientRegistrationRepository.class, OpaqueTokenIntrospector.class))
-			.withPropertyValues("spring.security.user.name=alice")
-			.run(((context) -> assertThat(context).hasSingleBean(InMemoryUserDetailsManager.class)));
-	}
-
-	@Test
-	void userDetailsServiceWhenRelyingPartyRegistrationRepositoryPresentAndPasswordConfigured() {
-		this.contextRunner
-			.withClassLoader(new FilteredClassLoader(ClientRegistrationRepository.class, OpaqueTokenIntrospector.class))
-			.withPropertyValues("spring.security.user.password=secret")
-			.run(((context) -> assertThat(context).hasSingleBean(InMemoryUserDetailsManager.class)));
 	}
 
 	private Function<ApplicationContextRunner, ApplicationContextRunner> noOtherFormsOfAuthenticationOnTheClasspath() {

@@ -144,7 +144,6 @@ public class JarFile extends AbstractJarFile implements Iterable<java.util.jar.J
 				super.close();
 			}
 			catch (IOException ioex) {
-				// Ignore
 			}
 			throw ex;
 		}

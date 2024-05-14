@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
 
 import org.springframework.boot.autoconfigure.AutoConfigurations;
+import org.springframework.boot.autoconfigure.security.reactive.ReactiveSecurityAutoConfiguration.EnableWebFluxSecurityConfiguration;
 import org.springframework.boot.test.context.FilteredClassLoader;
 import org.springframework.boot.test.context.runner.ReactiveWebApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
@@ -52,36 +53,28 @@ class ReactiveSecurityAutoConfigurationTests {
 	}
 
 	@Test
-	void autoConfiguresDenyAllReactiveAuthenticationManagerWhenNoAlternativeIsAvailable() {
+	void backsOffWhenReactiveAuthenticationManagerNotPresent() {
 		this.contextRunner.run((context) -> assertThat(context).hasSingleBean(ReactiveSecurityAutoConfiguration.class)
-			.hasBean("denyAllAuthenticationManager"));
+			.doesNotHaveBean(EnableWebFluxSecurityConfiguration.class));
 	}
 
 	@Test
 	void enablesWebFluxSecurityWhenUserDetailsServiceIsPresent() {
-		this.contextRunner.withUserConfiguration(UserDetailsServiceConfiguration.class).run((context) -> {
-			assertThat(context).hasSingleBean(WebFilterChainProxy.class);
-			assertThat(context).doesNotHaveBean("denyAllAuthenticationManager");
-		});
+		this.contextRunner.withUserConfiguration(UserDetailsServiceConfiguration.class)
+			.run((context) -> assertThat(context).getBean(WebFilterChainProxy.class).isNotNull());
 	}
 
 	@Test
 	void enablesWebFluxSecurityWhenReactiveAuthenticationManagerIsPresent() {
 		this.contextRunner
 			.withBean(ReactiveAuthenticationManager.class, () -> mock(ReactiveAuthenticationManager.class))
-			.run((context) -> {
-				assertThat(context).hasSingleBean(WebFilterChainProxy.class);
-				assertThat(context).doesNotHaveBean("denyAllAuthenticationManager");
-			});
+			.run((context) -> assertThat(context).getBean(WebFilterChainProxy.class).isNotNull());
 	}
 
 	@Test
 	void enablesWebFluxSecurityWhenSecurityWebFilterChainIsPresent() {
 		this.contextRunner.withBean(SecurityWebFilterChain.class, () -> mock(SecurityWebFilterChain.class))
-			.run((context) -> {
-				assertThat(context).hasSingleBean(WebFilterChainProxy.class);
-				assertThat(context).doesNotHaveBean("denyAllAuthenticationManager");
-			});
+			.run((context) -> assertThat(context).getBean(WebFilterChainProxy.class).isNotNull());
 	}
 
 	@Test

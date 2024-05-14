@@ -115,7 +115,7 @@ class StaticResourceJars {
 
 	private boolean isResourcesJar(JarURLConnection connection) {
 		try {
-			return isResourcesJar(connection.getJarFile(), !connection.getUseCaches());
+			return isResourcesJar(connection.getJarFile());
 		}
 		catch (IOException ex) {
 			return false;
@@ -124,21 +124,16 @@ class StaticResourceJars {
 
 	private boolean isResourcesJar(File file) {
 		try {
-			return isResourcesJar(new JarFile(file), true);
+			return isResourcesJar(new JarFile(file));
 		}
 		catch (IOException | InvalidPathException ex) {
 			return false;
 		}
 	}
 
-	private boolean isResourcesJar(JarFile jarFile, boolean closeJarFile) throws IOException {
-		try {
-			return jarFile.getName().endsWith(".jar") && (jarFile.getJarEntry("META-INF/resources") != null);
-		}
-		finally {
-			if (closeJarFile) {
-				jarFile.close();
-			}
+	private boolean isResourcesJar(JarFile jar) throws IOException {
+		try (jar) {
+			return jar.getName().endsWith(".jar") && (jar.getJarEntry("META-INF/resources") != null);
 		}
 	}
 

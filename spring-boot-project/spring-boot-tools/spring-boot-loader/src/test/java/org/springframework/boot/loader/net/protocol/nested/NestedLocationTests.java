@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,16 +17,10 @@
 package org.springframework.boot.loader.net.protocol.nested;
 
 import java.io.File;
-import java.net.MalformedURLException;
-import java.net.URI;
 import java.net.URL;
-import java.nio.file.Path;
 
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 
 import org.springframework.boot.loader.net.protocol.Handlers;
@@ -38,7 +32,6 @@ import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException
  * Tests for {@link NestedLocation}.
  *
  * @author Phillip Webb
- * @author Andy Wilkinson
  */
 class NestedLocationTests {
 
@@ -51,23 +44,21 @@ class NestedLocationTests {
 	}
 
 	@Test
-	void createWhenPathIsNullThrowsException() {
+	void createWhenFileIsNullThrowsException() {
 		assertThatIllegalArgumentException().isThrownBy(() -> new NestedLocation(null, "nested.jar"))
-			.withMessageContaining("'path' must not be null");
+			.withMessageContaining("'file' must not be null");
 	}
 
 	@Test
-	void createWhenNestedEntryNameIsNull() {
-		NestedLocation location = new NestedLocation(Path.of("test.jar"), null);
-		assertThat(location.path().toString()).contains("test.jar");
-		assertThat(location.nestedEntryName()).isNull();
+	void createWhenNestedEntryNameIsNullThrowsException() {
+		assertThatIllegalArgumentException().isThrownBy(() -> new NestedLocation(new File("test.jar"), null))
+			.withMessageContaining("'nestedEntryName' must not be empty");
 	}
 
 	@Test
-	void createWhenNestedEntryNameIsEmpty() {
-		NestedLocation location = new NestedLocation(Path.of("test.jar"), "");
-		assertThat(location.path().toString()).contains("test.jar");
-		assertThat(location.nestedEntryName()).isNull();
+	void createWhenNestedEntryNameIsEmptyThrowsException() {
+		assertThatIllegalArgumentException().isThrownBy(() -> new NestedLocation(new File("test.jar"), null))
+			.withMessageContaining("'nestedEntryName' must not be empty");
 	}
 
 	@Test
@@ -85,15 +76,14 @@ class NestedLocationTests {
 	@Test
 	void fromUrlWhenNoPathThrowsException() {
 		assertThatIllegalArgumentException().isThrownBy(() -> NestedLocation.fromUrl(new URL("nested:")))
-			.withMessageContaining("'location' must not be empty");
+			.withMessageContaining("'path' must not be empty");
 	}
 
 	@Test
-	void fromUrlWhenNoSeparator() throws Exception {
-		File file = new File(this.temp, "test.jar");
-		NestedLocation location = NestedLocation.fromUrl(new URL("nested:" + file.getAbsolutePath() + "/"));
-		assertThat(location.path()).isEqualTo(file.toPath());
-		assertThat(location.nestedEntryName()).isNull();
+	void fromUrlWhenNoSeparatorThrowsExceptiuon() {
+		assertThatIllegalArgumentException()
+			.isThrownBy(() -> NestedLocation.fromUrl(new URL("nested:test.jar!nested.jar")))
+			.withMessageContaining("'path' must contain '/!'");
 	}
 
 	@Test
@@ -101,46 +91,8 @@ class NestedLocationTests {
 		File file = new File(this.temp, "test.jar");
 		NestedLocation location = NestedLocation
 			.fromUrl(new URL("nested:" + file.getAbsolutePath() + "/!lib/nested.jar"));
-		assertThat(location.path()).isEqualTo(file.toPath());
+		assertThat(location.file()).isEqualTo(file);
 		assertThat(location.nestedEntryName()).isEqualTo("lib/nested.jar");
-	}
-
-	@Test
-	void fromUriWhenUrlIsNullThrowsException() {
-		assertThatIllegalArgumentException().isThrownBy(() -> NestedLocation.fromUri(null))
-			.withMessageContaining("'uri' must not be null");
-	}
-
-	@Test
-	void fromUriWhenNotNestedProtocolThrowsException() {
-		assertThatIllegalArgumentException().isThrownBy(() -> NestedLocation.fromUri(new URI("file://test.jar")))
-			.withMessageContaining("must use 'nested' scheme");
-	}
-
-	@Test
-	@Disabled
-	void fromUriWhenNoSeparator() throws Exception {
-		NestedLocation location = NestedLocation.fromUri(new URI("nested:test.jar!nested.jar"));
-		assertThat(location.path().toString()).contains("test.jar!nested.jar");
-		assertThat(location.nestedEntryName()).isNull();
-	}
-
-	@Test
-	void fromUriReturnsNestedLocation() throws Exception {
-		File file = new File(this.temp, "test.jar");
-		NestedLocation location = NestedLocation
-			.fromUri(new URI("nested:" + file.getAbsoluteFile().toURI().getPath() + "/!lib/nested.jar"));
-		assertThat(location.path()).isEqualTo(file.toPath());
-		assertThat(location.nestedEntryName()).isEqualTo("lib/nested.jar");
-	}
-
-	@Test
-	@EnabledOnOs(OS.WINDOWS)
-	void windowsUncPathIsHandledCorrectly() throws MalformedURLException {
-		NestedLocation location = NestedLocation.fromUrl(
-				new URL("nested://localhost/c$/dev/temp/demo/build/libs/demo-0.0.1-SNAPSHOT.jar/!BOOT-INF/classes/"));
-		assertThat(location.path()).asString()
-			.isEqualTo("\\\\localhost\\c$\\dev\\temp\\demo\\build\\libs\\demo-0.0.1-SNAPSHOT.jar");
 	}
 
 }

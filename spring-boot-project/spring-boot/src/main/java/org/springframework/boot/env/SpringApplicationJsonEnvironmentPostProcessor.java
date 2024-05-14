@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -126,20 +126,20 @@ public class SpringApplicationJsonEnvironmentPostProcessor implements Environmen
 
 	@SuppressWarnings("unchecked")
 	private void extract(String name, Map<String, Object> result, Object value) {
-		if (value instanceof Map<?, ?> map) {
-			if (CollectionUtils.isEmpty(map)) {
+		if (value instanceof Map) {
+			if (CollectionUtils.isEmpty((Map<?, ?>) value)) {
 				result.put(name, value);
 				return;
 			}
 			flatten(name, result, (Map<String, Object>) value);
 		}
-		else if (value instanceof Collection<?> collection) {
-			if (CollectionUtils.isEmpty(collection)) {
+		else if (value instanceof Collection) {
+			if (CollectionUtils.isEmpty((Collection<?>) value)) {
 				result.put(name, value);
 				return;
 			}
 			int index = 0;
-			for (Object object : collection) {
+			for (Object object : (Collection<Object>) value) {
 				extract(name + "[" + index + "]", result, object);
 				index++;
 			}

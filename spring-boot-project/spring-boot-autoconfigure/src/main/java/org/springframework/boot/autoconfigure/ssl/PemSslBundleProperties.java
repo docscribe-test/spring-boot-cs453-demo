@@ -39,12 +39,25 @@ public class PemSslBundleProperties extends SslBundleProperties {
 	 */
 	private final Store truststore = new Store();
 
+	/**
+	 * Whether to verify that the private key matches the public key.
+	 */
+	private boolean verifyKeys;
+
 	public Store getKeystore() {
 		return this.keystore;
 	}
 
 	public Store getTruststore() {
 		return this.truststore;
+	}
+
+	public boolean isVerifyKeys() {
+		return this.verifyKeys;
+	}
+
+	public void setVerifyKeys(boolean verifyKeys) {
+		this.verifyKeys = verifyKeys;
 	}
 
 	/**
@@ -58,7 +71,7 @@ public class PemSslBundleProperties extends SslBundleProperties {
 		private String type;
 
 		/**
-		 * Location or content of the certificate or certificate chain in PEM format.
+		 * Location or content of the certificate in PEM format.
 		 */
 		private String certificate;
 
@@ -71,11 +84,6 @@ public class PemSslBundleProperties extends SslBundleProperties {
 		 * Password used to decrypt an encrypted private key.
 		 */
 		private String privateKeyPassword;
-
-		/**
-		 * Whether to verify that the private key matches the public key.
-		 */
-		private boolean verifyKeys;
 
 		public String getType() {
 			return this.type;
@@ -107,14 +115,6 @@ public class PemSslBundleProperties extends SslBundleProperties {
 
 		public void setPrivateKeyPassword(String privateKeyPassword) {
 			this.privateKeyPassword = privateKeyPassword;
-		}
-
-		public boolean isVerifyKeys() {
-			return this.verifyKeys;
-		}
-
-		public void setVerifyKeys(boolean verifyKeys) {
-			this.verifyKeys = verifyKeys;
 		}
 
 	}

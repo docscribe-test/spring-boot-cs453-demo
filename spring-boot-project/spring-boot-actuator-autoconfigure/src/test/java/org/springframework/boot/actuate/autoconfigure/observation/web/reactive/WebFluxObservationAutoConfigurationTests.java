@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,11 +33,8 @@ import org.springframework.boot.test.context.assertj.AssertableReactiveWebApplic
 import org.springframework.boot.test.context.runner.ReactiveWebApplicationContextRunner;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
-import org.springframework.http.server.reactive.observation.DefaultServerRequestObservationConvention;
-import org.springframework.http.server.reactive.observation.ServerRequestObservationConvention;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 
 /**
  * Tests for {@link WebFluxObservationAutoConfiguration}
@@ -45,7 +42,6 @@ import static org.mockito.Mockito.mock;
  * @author Brian Clozel
  * @author Dmytro Nosan
  * @author Madhura Bhave
- * @author Moritz Halbritter
  */
 @ExtendWith(OutputCaptureExtension.class)
 class WebFluxObservationAutoConfigurationTests {
@@ -92,28 +88,6 @@ class WebFluxObservationAutoConfigurationTests {
 				MeterRegistry registry = getInitializedMeterRegistry(context);
 				assertThat(registry.get("http.server.requests").meters()).hasSize(3);
 				assertThat(output).doesNotContain("Reached the maximum number of URI tags for 'http.server.requests'");
-			});
-	}
-
-	@Test
-	void shouldSupplyDefaultServerRequestObservationConvention() {
-		this.contextRunner.withPropertyValues("management.observations.http.server.requests.name=some-other-name")
-			.run((context) -> {
-				assertThat(context).hasSingleBean(DefaultServerRequestObservationConvention.class);
-				DefaultServerRequestObservationConvention bean = context
-					.getBean(DefaultServerRequestObservationConvention.class);
-				assertThat(bean.getName()).isEqualTo("some-other-name");
-			});
-	}
-
-	@Test
-	void shouldBackOffOnCustomServerRequestObservationConvention() {
-		this.contextRunner
-			.withBean("customServerRequestObservationConvention", ServerRequestObservationConvention.class,
-					() -> mock(ServerRequestObservationConvention.class))
-			.run((context) -> {
-				assertThat(context).hasBean("customServerRequestObservationConvention");
-				assertThat(context).hasSingleBean(ServerRequestObservationConvention.class);
 			});
 	}
 

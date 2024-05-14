@@ -29,7 +29,6 @@ import org.awaitility.core.ConditionTimeoutException;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.images.builder.ImageFromDockerfile;
-import org.testcontainers.images.builder.dockerfile.DockerfileBuilder;
 
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.web.client.RestTemplateBuilder;
@@ -123,18 +122,10 @@ abstract class AbstractDeploymentTests {
 	static final class WarDeploymentContainer extends GenericContainer<WarDeploymentContainer> {
 
 		WarDeploymentContainer(String baseImage, String deploymentLocation, int port) {
-			this(baseImage, deploymentLocation, port, null);
-		}
-
-		WarDeploymentContainer(String baseImage, String deploymentLocation, int port,
-				Consumer<DockerfileBuilder> dockerfileCustomizer) {
 			super(new ImageFromDockerfile().withFileFromFile("spring-boot.war", findWarToDeploy())
-				.withDockerfileFromBuilder((builder) -> {
-					builder.from(baseImage).add("spring-boot.war", deploymentLocation + "/spring-boot.war");
-					if (dockerfileCustomizer != null) {
-						dockerfileCustomizer.accept(builder);
-					}
-				}));
+				.withDockerfileFromBuilder((builder) -> builder.from(baseImage)
+					.add("spring-boot.war", deploymentLocation + "/spring-boot.war")
+					.build()));
 			withExposedPorts(port).withStartupTimeout(Duration.ofMinutes(5)).withStartupAttempts(3);
 		}
 

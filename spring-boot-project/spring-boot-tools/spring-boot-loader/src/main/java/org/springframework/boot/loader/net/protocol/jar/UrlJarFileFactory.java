@@ -58,12 +58,7 @@ class UrlJarFileFactory {
 	}
 
 	private Runtime.Version getVersion(URL url) {
-		// The standard JDK handler uses #runtime to indicate that the runtime version
-		// should be used. This unfortunately doesn't work for us as
-		// jdk.internal.loader.URLClassPath only adds the runtime fragment when the URL
-		// is using the internal JDK handler. We need to flip the default to use
-		// the runtime version. See gh-38050
-		return "base".equals(url.getRef()) ? JarFile.baseVersion() : JarFile.runtimeVersion();
+		return "runtime".equals(url.getRef()) ? JarFile.runtimeVersion() : JarFile.baseVersion();
 	}
 
 	private boolean isLocalFileUrl(URL url) {
@@ -80,10 +75,14 @@ class UrlJarFileFactory {
 		return new UrlJarFile(new File(path), version, closeAction);
 	}
 
+	private boolean isNestedUrl(URL url) {
+		return url.getProtocol().equalsIgnoreCase("nested");
+	}
+
 	private JarFile createJarFileForNested(URL url, Runtime.Version version, Consumer<JarFile> closeAction)
 			throws IOException {
 		NestedLocation location = NestedLocation.fromUrl(url);
-		return new UrlNestedJarFile(location.path().toFile(), location.nestedEntryName(), version, closeAction);
+		return new UrlNestedJarFile(location.file(), location.nestedEntryName(), version, closeAction);
 	}
 
 	private JarFile createJarFileForStream(URL url, Version version, Consumer<JarFile> closeAction) throws IOException {
@@ -114,10 +113,6 @@ class UrlJarFileFactory {
 		catch (IOException ex) {
 			cause.addSuppressed(ex);
 		}
-	}
-
-	static boolean isNestedUrl(URL url) {
-		return url.getProtocol().equalsIgnoreCase("nested");
 	}
 
 }

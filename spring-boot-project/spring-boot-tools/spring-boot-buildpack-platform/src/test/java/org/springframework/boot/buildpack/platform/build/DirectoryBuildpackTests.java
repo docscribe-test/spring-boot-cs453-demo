@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -128,10 +128,10 @@ class DirectoryBuildpackTests {
 		byte[] content = layers.get(0).toByteArray();
 		try (TarArchiveInputStream tar = new TarArchiveInputStream(new ByteArrayInputStream(content))) {
 			List<TarArchiveEntry> entries = new ArrayList<>();
-			TarArchiveEntry entry = tar.getNextEntry();
+			TarArchiveEntry entry = tar.getNextTarEntry();
 			while (entry != null) {
 				entries.add(entry);
-				entry = tar.getNextEntry();
+				entry = tar.getNextTarEntry();
 			}
 			assertThat(entries).extracting("name", "mode")
 				.containsExactlyInAnyOrder(tuple("/cnb/", 0755), tuple("/cnb/buildpacks/", 0755),

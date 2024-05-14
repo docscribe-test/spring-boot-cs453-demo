@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package org.springframework.boot.actuate.autoconfigure.endpoint.web.documentation;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -67,7 +68,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 class HealthEndpointDocumentationTests extends MockMvcEndpointDocumentationTests {
 
-	private static final List<FieldDescriptor> componentFields = List.of(
+	private static final List<FieldDescriptor> componentFields = Arrays.asList(
 			fieldWithPath("status").description("Status of a specific part of the application"),
 			subsectionWithPath("details").description("Details of the health of a specific part of the application."));
 
@@ -137,7 +138,7 @@ class HealthEndpointDocumentationTests extends MockMvcEndpointDocumentationTests
 
 	}
 
-	private static final class TestHealthEndpointGroup implements HealthEndpointGroup {
+	private static class TestHealthEndpointGroup implements HealthEndpointGroup {
 
 		private final StatusAggregator statusAggregator = new SimpleStatusAggregator();
 

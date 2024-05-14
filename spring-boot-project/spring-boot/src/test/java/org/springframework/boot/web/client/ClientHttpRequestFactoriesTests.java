@@ -16,6 +16,7 @@
 
 package org.springframework.boot.web.client;
 
+import java.io.IOException;
 import java.net.URI;
 import java.time.Duration;
 
@@ -161,18 +162,6 @@ class ClientHttpRequestFactoriesTests {
 		assertThat(requestFactory).hasFieldOrPropertyWithValue("readTimeout", 1234);
 	}
 
-	@Test
-	void reflectiveShouldFavorDurationTimeoutMethods() {
-		IntAndDurationTimeoutsClientHttpRequestFactory requestFactory = ClientHttpRequestFactories.get(
-				IntAndDurationTimeoutsClientHttpRequestFactory.class,
-				ClientHttpRequestFactorySettings.DEFAULTS.withConnectTimeout(Duration.ofSeconds(1))
-					.withReadTimeout(Duration.ofSeconds(2)));
-		assertThat((requestFactory).connectTimeout).isZero();
-		assertThat((requestFactory).readTimeout).isZero();
-		assertThat((requestFactory).connectTimeoutDuration).isEqualTo(Duration.ofSeconds(1));
-		assertThat((requestFactory).readTimeoutDuration).isEqualTo(Duration.ofSeconds(2));
-	}
-
 	public static class TestClientHttpRequestFactory implements ClientHttpRequestFactory {
 
 		private int connectTimeout;
@@ -180,7 +169,7 @@ class ClientHttpRequestFactoriesTests {
 		private int readTimeout;
 
 		@Override
-		public ClientHttpRequest createRequest(URI uri, HttpMethod httpMethod) {
+		public ClientHttpRequest createRequest(URI uri, HttpMethod httpMethod) throws IOException {
 			throw new UnsupportedOperationException();
 		}
 
@@ -197,7 +186,7 @@ class ClientHttpRequestFactoriesTests {
 	public static class UnconfigurableClientHttpRequestFactory implements ClientHttpRequestFactory {
 
 		@Override
-		public ClientHttpRequest createRequest(URI uri, HttpMethod httpMethod) {
+		public ClientHttpRequest createRequest(URI uri, HttpMethod httpMethod) throws IOException {
 			throw new UnsupportedOperationException();
 		}
 
@@ -206,7 +195,7 @@ class ClientHttpRequestFactoriesTests {
 	public static class DeprecatedMethodsClientHttpRequestFactory implements ClientHttpRequestFactory {
 
 		@Override
-		public ClientHttpRequest createRequest(URI uri, HttpMethod httpMethod) {
+		public ClientHttpRequest createRequest(URI uri, HttpMethod httpMethod) throws IOException {
 			throw new UnsupportedOperationException();
 		}
 
@@ -220,39 +209,6 @@ class ClientHttpRequestFactoriesTests {
 
 		@Deprecated(since = "3.0.0", forRemoval = false)
 		public void setBufferRequestBody(boolean bufferRequestBody) {
-		}
-
-	}
-
-	public static class IntAndDurationTimeoutsClientHttpRequestFactory implements ClientHttpRequestFactory {
-
-		private int readTimeout;
-
-		private int connectTimeout;
-
-		private Duration readTimeoutDuration;
-
-		private Duration connectTimeoutDuration;
-
-		@Override
-		public ClientHttpRequest createRequest(URI uri, HttpMethod httpMethod) {
-			throw new UnsupportedOperationException();
-		}
-
-		public void setConnectTimeout(int timeout) {
-			this.connectTimeout = timeout;
-		}
-
-		public void setReadTimeout(int timeout) {
-			this.readTimeout = timeout;
-		}
-
-		public void setConnectTimeout(Duration timeout) {
-			this.connectTimeoutDuration = timeout;
-		}
-
-		public void setReadTimeout(Duration timeout) {
-			this.readTimeoutDuration = timeout;
 		}
 
 	}

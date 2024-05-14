@@ -36,7 +36,7 @@ public abstract class SslBundleProperties {
 	private final Key key = new Key();
 
 	/**
-	 * Options for the SSL connection.
+	 * Options for the SLL connection.
 	 */
 	private final Options options = new Options();
 
@@ -44,11 +44,6 @@ public abstract class SslBundleProperties {
 	 * SSL Protocol to use.
 	 */
 	private String protocol = SslBundle.DEFAULT_PROTOCOL;
-
-	/**
-	 * Whether to reload the SSL bundle.
-	 */
-	private boolean reloadOnUpdate;
 
 	public Key getKey() {
 		return this.key;
@@ -64,14 +59,6 @@ public abstract class SslBundleProperties {
 
 	public void setProtocol(String protocol) {
 		this.protocol = protocol;
-	}
-
-	public boolean isReloadOnUpdate() {
-		return this.reloadOnUpdate;
-	}
-
-	public void setReloadOnUpdate(boolean reloadOnUpdate) {
-		this.reloadOnUpdate = reloadOnUpdate;
 	}
 
 	public static class Options {

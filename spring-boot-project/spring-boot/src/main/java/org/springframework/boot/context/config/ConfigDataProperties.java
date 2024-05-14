@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,6 @@ import org.springframework.util.ObjectUtils;
  *
  * @author Phillip Webb
  * @author Madhura Bhave
- * @author Yanming Zhou
  */
 class ConfigDataProperties {
 
@@ -119,8 +118,8 @@ class ConfigDataProperties {
 			if (activationContext == null) {
 				return false;
 			}
-			CloudPlatform cloudPlatform = activationContext.getCloudPlatform();
-			boolean activate = isActive((cloudPlatform != null) ? cloudPlatform : CloudPlatform.NONE);
+			boolean activate = true;
+			activate = activate && isActive(activationContext.getCloudPlatform());
 			activate = activate && isActive(activationContext.getProfiles());
 			return activate;
 		}

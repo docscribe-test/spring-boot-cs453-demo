@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,9 +64,6 @@ class EnvironmentEndpointDocumentationTests extends MockMvcEndpointDocumentation
 	private static final FieldDescriptor activeProfiles = fieldWithPath("activeProfiles")
 		.description("Names of the active profiles, if any.");
 
-	private static final FieldDescriptor defaultProfiles = fieldWithPath("defaultProfiles")
-		.description("Names of the default profiles, if any.");
-
 	private static final FieldDescriptor propertySources = fieldWithPath("propertySources")
 		.description("Property sources in order of precedence.");
 
@@ -82,7 +79,7 @@ class EnvironmentEndpointDocumentationTests extends MockMvcEndpointDocumentation
 							replacePattern(Pattern.compile(
 									"org/springframework/boot/actuate/autoconfigure/endpoint/web/documentation/"), ""),
 							filterProperties()),
-					responseFields(activeProfiles, defaultProfiles, propertySources, propertySourceName,
+					responseFields(activeProfiles, propertySources, propertySourceName,
 							fieldWithPath("propertySources.[].properties")
 								.description("Properties in the property source keyed by property name."),
 							fieldWithPath("propertySources.[].properties.*.value")
@@ -104,7 +101,7 @@ class EnvironmentEndpointDocumentationTests extends MockMvcEndpointDocumentation
 								.optional(),
 							fieldWithPath("property.source").description("Name of the source of the property."),
 							fieldWithPath("property.value").description("Value of the property."), activeProfiles,
-							defaultProfiles, propertySources, propertySourceName,
+							propertySources, propertySourceName,
 							fieldWithPath("propertySources.[].property")
 								.description("Property in the property source, if any.")
 								.optional(),

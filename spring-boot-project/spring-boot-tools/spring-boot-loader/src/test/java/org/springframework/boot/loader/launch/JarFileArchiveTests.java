@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,7 +80,7 @@ class JarFileArchiveTests {
 	}
 
 	@Test
-	void getClassPathUrlsWhenNoPredicatesReturnsUrls() throws Exception {
+	void getClassPathUrlsWhenNoPredicartesReturnsUrls() throws Exception {
 		Set<URL> urls = this.archive.getClassPathUrls(Archive.ALL_ENTRIES);
 		URL[] expected = TestJar.expectedEntries()
 			.stream()
@@ -112,8 +112,7 @@ class JarFileArchiveTests {
 		assertThat(urls).hasSize(1);
 		URL url = urls.iterator().next();
 		assertThat(url).isNotEqualTo(JarUrl.create(this.file, "nested.jar"));
-		// The unpack URL must be a raw file URL (see gh-38833)
-		assertThat(url.toString()).startsWith("file:").endsWith("/nested.jar");
+		assertThat(url.toString()).startsWith("jar:file:").endsWith("/nested.jar!/");
 	}
 
 	@Test

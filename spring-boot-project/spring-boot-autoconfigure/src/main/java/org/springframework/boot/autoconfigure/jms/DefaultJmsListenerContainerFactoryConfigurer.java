@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package org.springframework.boot.autoconfigure.jms;
 
 import java.time.Duration;
 
-import io.micrometer.observation.ObservationRegistry;
 import jakarta.jms.ConnectionFactory;
 import jakarta.jms.ExceptionListener;
 
@@ -36,7 +35,6 @@ import org.springframework.util.Assert;
  * @author Stephane Nicoll
  * @author Eddú Meléndez
  * @author Vedran Pavic
- * @author Lasse Wulff
  * @since 1.3.3
  */
 public final class DefaultJmsListenerContainerFactoryConfigurer {
@@ -50,8 +48,6 @@ public final class DefaultJmsListenerContainerFactoryConfigurer {
 	private JtaTransactionManager transactionManager;
 
 	private JmsProperties jmsProperties;
-
-	private ObservationRegistry observationRegistry;
 
 	/**
 	 * Set the {@link DestinationResolver} to use or {@code null} if no destination
@@ -98,15 +94,6 @@ public final class DefaultJmsListenerContainerFactoryConfigurer {
 	}
 
 	/**
-	 * Set the {@link ObservationRegistry} to use.
-	 * @param observationRegistry the {@link ObservationRegistry}
-	 * @since 3.2.1
-	 */
-	public void setObservationRegistry(ObservationRegistry observationRegistry) {
-		this.observationRegistry = observationRegistry;
-	}
-
-	/**
 	 * Configure the specified jms listener container factory. The factory can be further
 	 * tuned and default settings can be overridden.
 	 * @param factory the {@link DefaultJmsListenerContainerFactory} instance to configure
@@ -115,13 +102,11 @@ public final class DefaultJmsListenerContainerFactoryConfigurer {
 	public void configure(DefaultJmsListenerContainerFactory factory, ConnectionFactory connectionFactory) {
 		Assert.notNull(factory, "Factory must not be null");
 		Assert.notNull(connectionFactory, "ConnectionFactory must not be null");
+		factory.setConnectionFactory(connectionFactory);
+		factory.setPubSubDomain(this.jmsProperties.isPubSubDomain());
 		JmsProperties.Listener listenerProperties = this.jmsProperties.getListener();
 		Session sessionProperties = listenerProperties.getSession();
-		factory.setConnectionFactory(connectionFactory);
 		PropertyMapper map = PropertyMapper.get().alwaysApplyingWhenNonNull();
-		map.from(this.jmsProperties::isPubSubDomain).to(factory::setPubSubDomain);
-		map.from(this.jmsProperties::isSubscriptionDurable).to(factory::setSubscriptionDurable);
-		map.from(this.jmsProperties::getClientId).to(factory::setClientId);
 		map.from(this.transactionManager).to(factory::setTransactionManager);
 		map.from(this.destinationResolver).to(factory::setDestinationResolver);
 		map.from(this.messageConverter).to(factory::setMessageConverter);
@@ -130,7 +115,6 @@ public final class DefaultJmsListenerContainerFactoryConfigurer {
 		if (this.transactionManager == null && sessionProperties.getTransacted() == null) {
 			factory.setSessionTransacted(true);
 		}
-		map.from(this.observationRegistry).to(factory::setObservationRegistry);
 		map.from(sessionProperties::getTransacted).to(factory::setSessionTransacted);
 		map.from(listenerProperties::isAutoStartup).to(factory::setAutoStartup);
 		map.from(listenerProperties::formatConcurrency).to(factory::setConcurrency);

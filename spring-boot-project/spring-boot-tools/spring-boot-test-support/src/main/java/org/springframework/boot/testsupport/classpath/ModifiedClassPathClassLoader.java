@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import java.io.File;
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -116,8 +115,8 @@ final class ModifiedClassPathClassLoader extends URLClassLoader {
 	private static Collection<AnnotatedElement> getAnnotatedElements(Object[] array) {
 		Set<AnnotatedElement> result = new LinkedHashSet<>();
 		for (Object item : array) {
-			if (item instanceof AnnotatedElement annotatedElement) {
-				result.add(annotatedElement);
+			if (item instanceof AnnotatedElement) {
+				result.add((AnnotatedElement) item);
 			}
 			else if (ObjectUtils.isArray(item)) {
 				result.addAll(getAnnotatedElements(ObjectUtils.toObjectArray(item)));
@@ -186,7 +185,6 @@ final class ModifiedClassPathClassLoader extends URLClassLoader {
 				return createdBy != null && createdBy.contains("IntelliJ");
 			}
 			catch (Exception ex) {
-				// Ignore
 			}
 		}
 		return false;
@@ -320,10 +318,7 @@ final class ModifiedClassPathClassLoader extends URLClassLoader {
 		private boolean isExcluded(URL url) {
 			if ("file".equals(url.getProtocol())) {
 				try {
-					URI uri = url.toURI();
-					File file = new File(uri);
-					String name = (!uri.toString().endsWith("/")) ? file.getName()
-							: file.getParentFile().getParentFile().getName();
+					String name = new File(url.toURI()).getName();
 					for (String exclusion : this.exclusions) {
 						if (this.matcher.match(exclusion, name)) {
 							return true;
@@ -331,7 +326,6 @@ final class ModifiedClassPathClassLoader extends URLClassLoader {
 					}
 				}
 				catch (URISyntaxException ex) {
-					// Ignore
 				}
 			}
 			return false;

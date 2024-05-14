@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package org.springframework.boot.loader.jar;
 
 import java.io.File;
-import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
@@ -101,10 +100,8 @@ public class NestedJarFile extends JarFile {
 	 * Creates a new {@link NestedJarFile} instance to read from the specific
 	 * {@code File}.
 	 * @param file the jar file to be opened for reading
-	 * @param nestedEntryName the nested entry name to open
+	 * @param nestedEntryName the nested entry name to open or {@code null}
 	 * @throws IOException on I/O error
-	 * @throws IllegalArgumentException if {@code nestedEntryName} is {@code null} or
-	 * empty
 	 */
 	public NestedJarFile(File file, String nestedEntryName) throws IOException {
 		this(file, nestedEntryName, null, true, Cleaner.instance);
@@ -114,11 +111,9 @@ public class NestedJarFile extends JarFile {
 	 * Creates a new {@link NestedJarFile} instance to read from the specific
 	 * {@code File}.
 	 * @param file the jar file to be opened for reading
-	 * @param nestedEntryName the nested entry name to open
+	 * @param nestedEntryName the nested entry name to open or {@code null}
 	 * @param version the release version to use when opening a multi-release jar
 	 * @throws IOException on I/O error
-	 * @throws IllegalArgumentException if {@code nestedEntryName} is {@code null} or
-	 * empty
 	 */
 	public NestedJarFile(File file, String nestedEntryName, Runtime.Version version) throws IOException {
 		this(file, nestedEntryName, version, true, Cleaner.instance);
@@ -128,13 +123,11 @@ public class NestedJarFile extends JarFile {
 	 * Creates a new {@link NestedJarFile} instance to read from the specific
 	 * {@code File}.
 	 * @param file the jar file to be opened for reading
-	 * @param nestedEntryName the nested entry name to open
+	 * @param nestedEntryName the nested entry name to open or {@code null}
 	 * @param version the release version to use when opening a multi-release jar
 	 * @param onlyNestedJars if <em>only</em> nested jars should be opened
 	 * @param cleaner the cleaner used to release resources
 	 * @throws IOException on I/O error
-	 * @throws IllegalArgumentException if {@code nestedEntryName} is {@code null} or
-	 * empty
 	 */
 	NestedJarFile(File file, String nestedEntryName, Runtime.Version version, boolean onlyNestedJars, Cleaner cleaner)
 			throws IOException {
@@ -150,19 +143,10 @@ public class NestedJarFile extends JarFile {
 		this.version = (version != null) ? version.feature() : baseVersion().feature();
 	}
 
-	public InputStream getRawZipDataInputStream() throws IOException {
-		RawZipDataInputStream inputStream = new RawZipDataInputStream(
-				this.resources.zipContent().openRawZipData().asInputStream());
-		this.resources.addInputStream(inputStream);
-		return inputStream;
-	}
-
 	@Override
 	public Manifest getManifest() throws IOException {
 		try {
-			return this.resources.zipContentForManifest()
-				.getInfo(ManifestInfo.class, this::getManifestInfo)
-				.getManifest();
+			return this.resources.zipContent().getInfo(ManifestInfo.class, this::getManifestInfo).getManifest();
 		}
 		catch (UncheckedIOException ex) {
 			throw ex.getCause();
@@ -246,7 +230,7 @@ public class NestedJarFile extends JarFile {
 		}
 		ZipContent.Entry entry = getVersionedContentEntry(name);
 		if (entry != null) {
-			return true;
+			return false;
 		}
 		synchronized (this) {
 			ensureOpen();
@@ -811,29 +795,6 @@ public class NestedJarFile extends JarFile {
 			super.close();
 			NestedJarFile.this.resources.removeInputStream(this);
 			this.cleanup.clean();
-		}
-
-	}
-
-	/**
-	 * {@link InputStream} for raw zip data.
-	 */
-	private class RawZipDataInputStream extends FilterInputStream {
-
-		private volatile boolean closed;
-
-		RawZipDataInputStream(InputStream in) {
-			super(in);
-		}
-
-		@Override
-		public void close() throws IOException {
-			if (this.closed) {
-				return;
-			}
-			this.closed = true;
-			super.close();
-			NestedJarFile.this.resources.removeInputStream(this);
 		}
 
 	}

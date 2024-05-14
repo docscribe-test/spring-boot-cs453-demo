@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,7 @@
 
 package org.springframework.boot.web.embedded.tomcat;
 
-import java.util.Map;
-
 import org.apache.catalina.connector.Connector;
-import org.apache.commons.logging.Log;
 import org.apache.coyote.ProtocolHandler;
 import org.apache.coyote.http11.AbstractHttp11JsseProtocol;
 import org.apache.coyote.http11.Http11NioProtocol;
@@ -36,73 +33,48 @@ import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 /**
- * Utility that configures SSL support on the given connector.
+ * {@link TomcatConnectorCustomizer} that configures SSL support on the given connector.
  *
  * @author Brian Clozel
  * @author Andy Wilkinson
  * @author Scott Frederick
  * @author Cyril Dangerville
- * @author Moritz Halbritter
  */
-class SslConnectorCustomizer {
-
-	private final Log logger;
+class SslConnectorCustomizer implements TomcatConnectorCustomizer {
 
 	private final ClientAuth clientAuth;
 
-	private final Connector connector;
+	private final SslBundle sslBundle;
 
-	SslConnectorCustomizer(Log logger, Connector connector, ClientAuth clientAuth) {
-		this.logger = logger;
+	SslConnectorCustomizer(ClientAuth clientAuth, SslBundle sslBundle) {
 		this.clientAuth = clientAuth;
-		this.connector = connector;
+		this.sslBundle = sslBundle;
 	}
 
-	void update(String serverName, SslBundle updatedSslBundle) {
-		AbstractHttp11JsseProtocol<?> protocol = (AbstractHttp11JsseProtocol<?>) this.connector.getProtocolHandler();
-		String host = (serverName != null) ? serverName : protocol.getDefaultSSLHostConfigName();
-		this.logger.debug("SSL Bundle for host " + host + " has been updated, reloading SSL configuration");
-		addSslHostConfig(protocol, host, updatedSslBundle);
-	}
-
-	void customize(SslBundle sslBundle, Map<String, SslBundle> serverNameSslBundles) {
-		ProtocolHandler handler = this.connector.getProtocolHandler();
+	@Override
+	public void customize(Connector connector) {
+		ProtocolHandler handler = connector.getProtocolHandler();
 		Assert.state(handler instanceof AbstractHttp11JsseProtocol,
 				"To use SSL, the connector's protocol handler must be an AbstractHttp11JsseProtocol subclass");
-		configureSsl((AbstractHttp11JsseProtocol<?>) handler, sslBundle, serverNameSslBundles);
-		this.connector.setScheme("https");
-		this.connector.setSecure(true);
+		configureSsl((AbstractHttp11JsseProtocol<?>) handler);
+		connector.setScheme("https");
+		connector.setSecure(true);
 	}
 
 	/**
 	 * Configure Tomcat's {@link AbstractHttp11JsseProtocol} for SSL.
 	 * @param protocol the protocol
-	 * @param sslBundle the SSL bundle
-	 * @param serverNameSslBundles the SSL bundles for specific SNI host names
 	 */
-	private void configureSsl(AbstractHttp11JsseProtocol<?> protocol, SslBundle sslBundle,
-			Map<String, SslBundle> serverNameSslBundles) {
+	void configureSsl(AbstractHttp11JsseProtocol<?> protocol) {
+		SslBundleKey key = this.sslBundle.getKey();
+		SslStoreBundle stores = this.sslBundle.getStores();
+		SslOptions options = this.sslBundle.getOptions();
 		protocol.setSSLEnabled(true);
-		if (sslBundle != null) {
-			addSslHostConfig(protocol, protocol.getDefaultSSLHostConfigName(), sslBundle);
-		}
-		serverNameSslBundles.forEach((serverName, bundle) -> addSslHostConfig(protocol, serverName, bundle));
-	}
-
-	private void addSslHostConfig(AbstractHttp11JsseProtocol<?> protocol, String serverName, SslBundle sslBundle) {
 		SSLHostConfig sslHostConfig = new SSLHostConfig();
-		sslHostConfig.setHostName(serverName);
+		sslHostConfig.setHostName(protocol.getDefaultSSLHostConfigName());
+		sslHostConfig.setSslProtocol(this.sslBundle.getProtocol());
+		protocol.addSslHostConfig(sslHostConfig);
 		configureSslClientAuth(sslHostConfig);
-		applySslBundle(protocol, sslHostConfig, sslBundle);
-		protocol.addSslHostConfig(sslHostConfig, true);
-	}
-
-	private void applySslBundle(AbstractHttp11JsseProtocol<?> protocol, SSLHostConfig sslHostConfig,
-			SslBundle sslBundle) {
-		SslBundleKey key = sslBundle.getKey();
-		SslStoreBundle stores = sslBundle.getStores();
-		SslOptions options = sslBundle.getOptions();
-		sslHostConfig.setSslProtocol(sslBundle.getProtocol());
 		SSLHostConfigCertificate certificate = new SSLHostConfigCertificate(sslHostConfig, Type.UNDEFINED);
 		String keystorePassword = (stores.getKeyStorePassword() != null) ? stores.getKeyStorePassword() : "";
 		certificate.setCertificateKeystorePassword(keystorePassword);
@@ -117,14 +89,17 @@ class SslConnectorCustomizer {
 			String ciphers = StringUtils.arrayToCommaDelimitedString(options.getCiphers());
 			sslHostConfig.setCiphers(ciphers);
 		}
-		configureSslStoreProvider(protocol, sslHostConfig, certificate, stores);
-		configureEnabledProtocols(sslHostConfig, options);
+		configureEnabledProtocols(protocol);
+		configureSslStoreProvider(protocol, sslHostConfig, certificate);
 	}
 
-	private void configureEnabledProtocols(SSLHostConfig sslHostConfig, SslOptions options) {
+	private void configureEnabledProtocols(AbstractHttp11JsseProtocol<?> protocol) {
+		SslOptions options = this.sslBundle.getOptions();
 		if (options.getEnabledProtocols() != null) {
 			String enabledProtocols = StringUtils.arrayToDelimitedString(options.getEnabledProtocols(), "+");
-			sslHostConfig.setProtocols(enabledProtocols);
+			for (SSLHostConfig sslHostConfig : protocol.findSslHostConfigs()) {
+				sslHostConfig.setProtocols(enabledProtocols);
+			}
 		}
 	}
 
@@ -132,11 +107,12 @@ class SslConnectorCustomizer {
 		config.setCertificateVerification(ClientAuth.map(this.clientAuth, "none", "optional", "required"));
 	}
 
-	private void configureSslStoreProvider(AbstractHttp11JsseProtocol<?> protocol, SSLHostConfig sslHostConfig,
-			SSLHostConfigCertificate certificate, SslStoreBundle stores) {
+	protected void configureSslStoreProvider(AbstractHttp11JsseProtocol<?> protocol, SSLHostConfig sslHostConfig,
+			SSLHostConfigCertificate certificate) {
 		Assert.isInstanceOf(Http11NioProtocol.class, protocol,
 				"SslStoreProvider can only be used with Http11NioProtocol");
 		try {
+			SslStoreBundle stores = this.sslBundle.getStores();
 			if (stores.getKeyStore() != null) {
 				certificate.setCertificateKeystore(stores.getKeyStore());
 			}

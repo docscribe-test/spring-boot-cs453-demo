@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,9 @@ import java.util.logging.Handler;
 
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.core.Filter;
+import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.Logger;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.config.AbstractConfiguration;
@@ -40,19 +42,19 @@ import org.apache.logging.log4j.core.config.ConfigurationFactory;
 import org.apache.logging.log4j.core.config.ConfigurationSource;
 import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.apache.logging.log4j.core.config.composite.CompositeConfiguration;
-import org.apache.logging.log4j.core.filter.DenyAllFilter;
+import org.apache.logging.log4j.core.filter.AbstractFilter;
 import org.apache.logging.log4j.core.net.UrlConnectionFactory;
 import org.apache.logging.log4j.core.net.ssl.SslConfiguration;
 import org.apache.logging.log4j.core.net.ssl.SslConfigurationFactory;
 import org.apache.logging.log4j.core.util.AuthorizationProvider;
 import org.apache.logging.log4j.core.util.NameUtil;
 import org.apache.logging.log4j.jul.Log4jBridgeHandler;
+import org.apache.logging.log4j.message.Message;
 import org.apache.logging.log4j.util.PropertiesUtil;
 
 import org.springframework.boot.context.properties.bind.BindResult;
 import org.springframework.boot.context.properties.bind.Bindable;
 import org.springframework.boot.context.properties.bind.Binder;
-import org.springframework.boot.io.ApplicationResourceLoader;
 import org.springframework.boot.logging.AbstractLoggingSystem;
 import org.springframework.boot.logging.LogFile;
 import org.springframework.boot.logging.LogLevel;
@@ -65,10 +67,10 @@ import org.springframework.core.Conventions;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.env.Environment;
-import org.springframework.core.io.Resource;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.ResourceUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -89,8 +91,6 @@ public class Log4J2LoggingSystem extends AbstractLoggingSystem {
 
 	private static final String LOG4J_LOG_MANAGER = "org.apache.logging.log4j.jul.LogManager";
 
-	private static final SpringEnvironmentPropertySource propertySource = new SpringEnvironmentPropertySource();
-
 	static final String ENVIRONMENT_KEY = Conventions.getQualifiedAttributeName(Log4J2LoggingSystem.class,
 			"environment");
 
@@ -106,7 +106,29 @@ public class Log4J2LoggingSystem extends AbstractLoggingSystem {
 		LEVELS.map(LogLevel.OFF, Level.OFF);
 	}
 
-	private static final Filter FILTER = DenyAllFilter.newBuilder().build();
+	private static final Filter FILTER = new AbstractFilter() {
+
+		@Override
+		public Result filter(LogEvent event) {
+			return Result.DENY;
+		}
+
+		@Override
+		public Result filter(Logger logger, Level level, Marker marker, Message msg, Throwable t) {
+			return Result.DENY;
+		}
+
+		@Override
+		public Result filter(Logger logger, Level level, Marker marker, Object msg, Throwable t) {
+			return Result.DENY;
+		}
+
+		@Override
+		public Result filter(Logger logger, Level level, Marker marker, String msg, Object... params) {
+			return Result.DENY;
+		}
+
+	};
 
 	public Log4J2LoggingSystem(ClassLoader classLoader) {
 		super(classLoader);
@@ -217,9 +239,8 @@ public class Log4J2LoggingSystem extends AbstractLoggingSystem {
 		}
 		Environment environment = initializationContext.getEnvironment();
 		if (environment != null) {
-			getLoggerContext().putObject(ENVIRONMENT_KEY, environment);
-			Log4J2LoggingSystem.propertySource.setEnvironment(environment);
-			PropertiesUtil.getProperties().addPropertySource(Log4J2LoggingSystem.propertySource);
+			getLoggerContext().putObjectIfAbsent(ENVIRONMENT_KEY, environment);
+			PropertiesUtil.getProperties().addPropertySource(new SpringEnvironmentPropertySource(environment));
 		}
 		loggerContext.getConfiguration().removeFilter(FILTER);
 		super.initialize(initializationContext, configLocation, logFile);
@@ -279,16 +300,15 @@ public class Log4J2LoggingSystem extends AbstractLoggingSystem {
 	}
 
 	private Configuration load(String location, LoggerContext context) throws IOException {
-		Resource resource = new ApplicationResourceLoader().getResource(location);
-		ConfigurationSource source = getConfigurationSource(resource);
+		URL url = ResourceUtils.getURL(location);
+		ConfigurationSource source = getConfigurationSource(url);
 		return ConfigurationFactory.getInstance().getConfiguration(context, source);
 	}
 
-	private ConfigurationSource getConfigurationSource(Resource resource) throws IOException {
-		if (resource.isFile()) {
-			return new ConfigurationSource(resource.getInputStream(), resource.getFile());
+	private ConfigurationSource getConfigurationSource(URL url) throws IOException {
+		if (FILE_PROTOCOL.equals(url.getProtocol())) {
+			return new ConfigurationSource(url.openStream(), ResourceUtils.getFile(url));
 		}
-		URL url = resource.getURL();
 		AuthorizationProvider authorizationProvider = ConfigurationFactory
 			.authorizationProvider(PropertiesUtil.getProperties());
 		SslConfiguration sslConfiguration = url.getProtocol().equals("https")
@@ -442,8 +462,6 @@ public class Log4J2LoggingSystem extends AbstractLoggingSystem {
 		LoggerContext loggerContext = getLoggerContext();
 		markAsUninitialized(loggerContext);
 		loggerContext.getConfiguration().removeFilter(FILTER);
-		Log4J2LoggingSystem.propertySource.setEnvironment(null);
-		getLoggerContext().removeObject(ENVIRONMENT_KEY);
 	}
 
 	private LoggerConfig getLogger(String name) {

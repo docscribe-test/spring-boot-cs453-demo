@@ -51,8 +51,7 @@ class JSON {
 			try {
 				return Double.valueOf((String) value);
 			}
-			catch (NumberFormatException ex) {
-				// Ignore
+			catch (NumberFormatException ignored) {
 			}
 		}
 		return null;
@@ -69,8 +68,7 @@ class JSON {
 			try {
 				return (int) Double.parseDouble((String) value);
 			}
-			catch (NumberFormatException ex) {
-				// Ignore
+			catch (NumberFormatException ignored) {
 			}
 		}
 		return null;
@@ -87,8 +85,7 @@ class JSON {
 			try {
 				return (long) Double.parseDouble((String) value);
 			}
-			catch (NumberFormatException ex) {
-				// Ignore
+			catch (NumberFormatException ignored) {
 			}
 		}
 		return null;

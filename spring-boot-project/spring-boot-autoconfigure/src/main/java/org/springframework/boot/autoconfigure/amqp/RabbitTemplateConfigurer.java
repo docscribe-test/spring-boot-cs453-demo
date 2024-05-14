@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,18 +21,14 @@ import java.util.List;
 
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.amqp.support.converter.AllowedListDeserializingMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.boot.context.properties.PropertyMapper;
-import org.springframework.boot.context.properties.source.InvalidConfigurationPropertyValueException;
 import org.springframework.util.Assert;
-import org.springframework.util.CollectionUtils;
 
 /**
  * Configure {@link RabbitTemplate} with sensible defaults.
  *
  * @author Stephane Nicoll
- * @author Yanming Zhou
  * @since 2.3.0
  */
 public class RabbitTemplateConfigurer {
@@ -105,20 +101,6 @@ public class RabbitTemplateConfigurer {
 		map.from(templateProperties::getExchange).to(template::setExchange);
 		map.from(templateProperties::getRoutingKey).to(template::setRoutingKey);
 		map.from(templateProperties::getDefaultReceiveQueue).whenNonNull().to(template::setDefaultReceiveQueue);
-		map.from(templateProperties::isObservationEnabled).to(template::setObservationEnabled);
-		map.from(templateProperties::getAllowedListPatterns)
-			.whenNot(CollectionUtils::isEmpty)
-			.to((allowListPatterns) -> setAllowedListPatterns(template.getMessageConverter(), allowListPatterns));
-	}
-
-	private void setAllowedListPatterns(MessageConverter messageConverter, List<String> allowListPatterns) {
-		if (messageConverter instanceof AllowedListDeserializingMessageConverter allowedListDeserializingMessageConverter) {
-			allowedListDeserializingMessageConverter.setAllowedListPatterns(allowListPatterns);
-			return;
-		}
-		throw new InvalidConfigurationPropertyValueException("spring.rabbitmq.template.allow-list-patterns",
-				allowListPatterns,
-				"Allow list patterns can only be applied to a AllowedListDeserializingMessageConverter");
 	}
 
 	private boolean determineMandatoryFlag() {

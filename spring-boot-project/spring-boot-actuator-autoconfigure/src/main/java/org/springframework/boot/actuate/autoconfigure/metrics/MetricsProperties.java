@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.DeprecatedConfigurationProperty;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
 /**
@@ -78,6 +79,8 @@ public class MetricsProperties {
 		return this.enable;
 	}
 
+	@Deprecated(since = "3.2.0", forRemoval = true)
+	@DeprecatedConfigurationProperty(replacement = "management.observations.key-values", since = "3.2.0")
 	public Map<String, String> getTags() {
 		return this.tags;
 	}

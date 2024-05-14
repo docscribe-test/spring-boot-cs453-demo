@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,8 +27,7 @@ import org.springframework.boot.context.metrics.buffering.StartupTimeline.Timeli
 import org.springframework.core.metrics.StartupStep;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Tests for {@link BufferingApplicationStartup}.
@@ -87,8 +86,8 @@ class BufferingApplicationStartupTests {
 	void startRecordingShouldFailIfEventsWereRecorded() {
 		BufferingApplicationStartup applicationStartup = new BufferingApplicationStartup(2);
 		applicationStartup.start("first").end();
-		assertThatIllegalStateException().isThrownBy(applicationStartup::startRecording)
-			.withMessage("Cannot restart recording once steps have been buffered.");
+		assertThatThrownBy(applicationStartup::startRecording).isInstanceOf(IllegalStateException.class)
+			.hasMessage("Cannot restart recording once steps have been buffered.");
 	}
 
 	@Test
@@ -96,8 +95,8 @@ class BufferingApplicationStartupTests {
 		BufferingApplicationStartup applicationStartup = new BufferingApplicationStartup(2);
 		StartupStep step = applicationStartup.start("first");
 		step.end();
-		assertThatIllegalStateException().isThrownBy(() -> step.tag("name", "value"))
-			.withMessage("StartupStep has already ended.");
+		assertThatThrownBy(() -> step.tag("name", "value")).isInstanceOf(IllegalStateException.class)
+			.hasMessage("StartupStep has already ended.");
 	}
 
 	@Test
@@ -105,8 +104,7 @@ class BufferingApplicationStartupTests {
 		BufferingApplicationStartup applicationStartup = new BufferingApplicationStartup(2);
 		StartupStep step = applicationStartup.start("first");
 		step.tag("name", "value");
-		assertThatExceptionOfType(UnsupportedOperationException.class)
-			.isThrownBy(() -> step.getTags().iterator().remove());
+		assertThatThrownBy(() -> step.getTags().iterator().remove()).isInstanceOf(UnsupportedOperationException.class);
 	}
 
 	@Test // gh-25792
@@ -139,7 +137,6 @@ class BufferingApplicationStartupTests {
 							Thread.sleep(1);
 						}
 						catch (InterruptedException ex) {
-							// Ignore
 						}
 						step.end();
 					}

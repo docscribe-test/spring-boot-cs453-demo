@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -313,14 +313,12 @@ class DockerApiTests {
 		}
 
 		@Test
-		@SuppressWarnings("removal")
 		void exportLayersWhenReferenceIsNullThrowsException() {
 			assertThatIllegalArgumentException().isThrownBy(() -> this.api.exportLayerFiles(null, (name, archive) -> {
 			})).withMessage("Reference must not be null");
 		}
 
 		@Test
-		@SuppressWarnings("removal")
 		void exportLayersWhenExportsIsNullThrowsException() {
 			ImageReference reference = ImageReference.of("gcr.io/paketo-buildpacks/builder:base");
 			assertThatIllegalArgumentException().isThrownBy(() -> this.api.exportLayerFiles(reference, null))
@@ -338,10 +336,10 @@ class DockerApiTests {
 				archive.writeTo(out);
 				try (TarArchiveInputStream in = new TarArchiveInputStream(
 						new ByteArrayInputStream(out.toByteArray()))) {
-					TarArchiveEntry entry = in.getNextEntry();
+					TarArchiveEntry entry = in.getNextTarEntry();
 					while (entry != null) {
 						contents.add(name, entry.getName());
-						entry = in.getNextEntry();
+						entry = in.getNextTarEntry();
 					}
 				}
 			});
@@ -366,10 +364,10 @@ class DockerApiTests {
 				archive.writeTo(out);
 				try (TarArchiveInputStream in = new TarArchiveInputStream(
 						new ByteArrayInputStream(out.toByteArray()))) {
-					TarArchiveEntry entry = in.getNextEntry();
+					TarArchiveEntry entry = in.getNextTarEntry();
 					while (entry != null) {
 						contents.add(name, entry.getName());
-						entry = in.getNextEntry();
+						entry = in.getNextTarEntry();
 					}
 				}
 			});
@@ -384,7 +382,6 @@ class DockerApiTests {
 		}
 
 		@Test
-		@SuppressWarnings("removal")
 		void exportLayerFilesDeletesTempFiles() throws Exception {
 			ImageReference reference = ImageReference.of("gcr.io/paketo-buildpacks/builder:base");
 			URI exportUri = new URI(IMAGES_URL + "/gcr.io/paketo-buildpacks/builder:base/get");
@@ -395,15 +392,14 @@ class DockerApiTests {
 		}
 
 		@Test
-		@SuppressWarnings("removal")
 		void exportLayersWithNoManifestThrowsException() throws Exception {
 			ImageReference reference = ImageReference.of("gcr.io/paketo-buildpacks/builder:base");
 			URI exportUri = new URI(IMAGES_URL + "/gcr.io/paketo-buildpacks/builder:base/get");
 			given(DockerApiTests.this.http.get(exportUri)).willReturn(responseOf("export-no-manifest.tar"));
-			String expectedMessage = "Exported image '%s' does not contain 'index.json' or 'manifest.json'"
-				.formatted(reference);
-			assertThatIllegalStateException().isThrownBy(() -> this.api.exportLayerFiles(reference, (name, archive) -> {
-			})).withMessageContaining(expectedMessage);
+			assertThatIllegalArgumentException()
+				.isThrownBy(() -> this.api.exportLayerFiles(reference, (name, archive) -> {
+				}))
+				.withMessageContaining("Manifest not found in image " + reference);
 		}
 
 		@Test

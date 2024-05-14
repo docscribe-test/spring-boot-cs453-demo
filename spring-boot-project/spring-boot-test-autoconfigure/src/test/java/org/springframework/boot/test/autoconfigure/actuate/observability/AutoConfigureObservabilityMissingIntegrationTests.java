@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.springframework.boot.test.autoconfigure.actuate.observability;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import io.micrometer.prometheus.PrometheusMeterRegistry;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,14 +37,13 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Moritz Halbritter
  */
 @SpringBootTest
-@SuppressWarnings("deprecation")
 class AutoConfigureObservabilityMissingIntegrationTests {
 
 	@Test
 	void customizerRunsAndOnlyEnablesSimpleMeterRegistryWhenNoAnnotationPresent(
 			@Autowired ApplicationContext applicationContext) {
 		assertThat(applicationContext.getBean(MeterRegistry.class)).isInstanceOf(SimpleMeterRegistry.class);
-		assertThat(applicationContext.getBeansOfType(io.micrometer.prometheus.PrometheusMeterRegistry.class)).isEmpty();
+		assertThat(applicationContext.getBeansOfType(PrometheusMeterRegistry.class)).isEmpty();
 	}
 
 	@Test

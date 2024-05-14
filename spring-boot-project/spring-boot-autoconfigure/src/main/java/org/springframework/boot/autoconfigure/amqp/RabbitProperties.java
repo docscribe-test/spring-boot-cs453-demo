@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,8 +47,6 @@ import org.springframework.util.unit.DataSize;
  * @author Eddú Meléndez
  * @author Rafael Carvalho
  * @author Scott Frederick
- * @author Lasse Wulff
- * @author Yanming Zhou
  * @since 1.0.0
  */
 @ConfigurationProperties(prefix = "spring.rabbitmq")
@@ -721,26 +719,21 @@ public class RabbitProperties {
 	public abstract static class BaseContainer {
 
 		/**
-		 * Whether to enable observation.
+		 * Whether to start the container automatically on startup.
 		 */
-		private boolean observationEnabled;
+		private boolean autoStartup = true;
 
-		public boolean isObservationEnabled() {
-			return this.observationEnabled;
+		public boolean isAutoStartup() {
+			return this.autoStartup;
 		}
 
-		public void setObservationEnabled(boolean observationEnabled) {
-			this.observationEnabled = observationEnabled;
+		public void setAutoStartup(boolean autoStartup) {
+			this.autoStartup = autoStartup;
 		}
 
 	}
 
 	public abstract static class AmqpContainer extends BaseContainer {
-
-		/**
-		 * Whether to start the container automatically on startup.
-		 */
-		private boolean autoStartup = true;
 
 		/**
 		 * Acknowledge mode of container.
@@ -779,14 +772,6 @@ public class RabbitProperties {
 		 * Optional properties for a retry interceptor.
 		 */
 		private final ListenerRetry retry = new ListenerRetry();
-
-		public boolean isAutoStartup() {
-			return this.autoStartup;
-		}
-
-		public void setAutoStartup(boolean autoStartup) {
-			this.autoStartup = autoStartup;
-		}
 
 		public AcknowledgeMode getAcknowledgeMode() {
 			return this.acknowledgeMode;
@@ -1011,16 +996,6 @@ public class RabbitProperties {
 		 */
 		private String defaultReceiveQueue;
 
-		/**
-		 * Whether to enable observation.
-		 */
-		private boolean observationEnabled;
-
-		/**
-		 * Simple patterns for allowable packages/classes for deserialization.
-		 */
-		private List<String> allowedListPatterns;
-
 		public Retry getRetry() {
 			return this.retry;
 		}
@@ -1071,22 +1046,6 @@ public class RabbitProperties {
 
 		public void setDefaultReceiveQueue(String defaultReceiveQueue) {
 			this.defaultReceiveQueue = defaultReceiveQueue;
-		}
-
-		public boolean isObservationEnabled() {
-			return this.observationEnabled;
-		}
-
-		public void setObservationEnabled(boolean observationEnabled) {
-			this.observationEnabled = observationEnabled;
-		}
-
-		public List<String> getAllowedListPatterns() {
-			return this.allowedListPatterns;
-		}
-
-		public void setAllowedListPatterns(List<String> allowedListPatterns) {
-			this.allowedListPatterns = allowedListPatterns;
 		}
 
 	}

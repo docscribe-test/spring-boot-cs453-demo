@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -101,8 +101,7 @@ public class EnvironmentEndpoint {
 						propertyNamePredicate, showUnsanitized));
 			}
 		});
-		return new EnvironmentDescriptor(Arrays.asList(this.environment.getActiveProfiles()),
-				Arrays.asList(this.environment.getDefaultProfiles()), propertySources);
+		return new EnvironmentDescriptor(Arrays.asList(this.environment.getActiveProfiles()), propertySources);
 	}
 
 	@ReadOperation
@@ -115,7 +114,7 @@ public class EnvironmentEndpoint {
 		Map<String, PropertyValueDescriptor> descriptors = getPropertySourceDescriptors(propertyName, showUnsanitized);
 		PropertySummaryDescriptor summary = getPropertySummaryDescriptor(descriptors);
 		return new EnvironmentEntryDescriptor(summary, Arrays.asList(this.environment.getActiveProfiles()),
-				Arrays.asList(this.environment.getDefaultProfiles()), toPropertySourceDescriptors(descriptors));
+				toPropertySourceDescriptors(descriptors));
 	}
 
 	private List<PropertySourceEntryDescriptor> toPropertySourceDescriptors(
@@ -210,23 +209,15 @@ public class EnvironmentEndpoint {
 
 		private final List<String> activeProfiles;
 
-		private final List<String> defaultProfiles;
-
 		private final List<PropertySourceDescriptor> propertySources;
 
-		private EnvironmentDescriptor(List<String> activeProfiles, List<String> defaultProfiles,
-				List<PropertySourceDescriptor> propertySources) {
+		private EnvironmentDescriptor(List<String> activeProfiles, List<PropertySourceDescriptor> propertySources) {
 			this.activeProfiles = activeProfiles;
-			this.defaultProfiles = defaultProfiles;
 			this.propertySources = propertySources;
 		}
 
 		public List<String> getActiveProfiles() {
 			return this.activeProfiles;
-		}
-
-		public List<String> getDefaultProfiles() {
-			return this.defaultProfiles;
 		}
 
 		public List<PropertySourceDescriptor> getPropertySources() {
@@ -245,15 +236,12 @@ public class EnvironmentEndpoint {
 
 		private final List<String> activeProfiles;
 
-		private final List<String> defaultProfiles;
-
 		private final List<PropertySourceEntryDescriptor> propertySources;
 
 		EnvironmentEntryDescriptor(PropertySummaryDescriptor property, List<String> activeProfiles,
-				List<String> defaultProfiles, List<PropertySourceEntryDescriptor> propertySources) {
+				List<PropertySourceEntryDescriptor> propertySources) {
 			this.property = property;
 			this.activeProfiles = activeProfiles;
-			this.defaultProfiles = defaultProfiles;
 			this.propertySources = propertySources;
 		}
 
@@ -263,10 +251,6 @@ public class EnvironmentEndpoint {
 
 		public List<String> getActiveProfiles() {
 			return this.activeProfiles;
-		}
-
-		public List<String> getDefaultProfiles() {
-			return this.defaultProfiles;
 		}
 
 		public List<PropertySourceEntryDescriptor> getPropertySources() {

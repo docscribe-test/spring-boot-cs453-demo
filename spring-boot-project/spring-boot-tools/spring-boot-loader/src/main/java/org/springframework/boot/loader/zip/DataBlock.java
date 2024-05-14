@@ -73,9 +73,8 @@ public interface DataBlock {
 	/**
 	 * Return this {@link DataBlock} as an {@link InputStream}.
 	 * @return an {@link InputStream} to read the data block content
-	 * @throws IOException on IO error
 	 */
-	default InputStream asInputStream() throws IOException {
+	default InputStream asInputStream() {
 		return new DataBlockInputStream(this);
 	}
 

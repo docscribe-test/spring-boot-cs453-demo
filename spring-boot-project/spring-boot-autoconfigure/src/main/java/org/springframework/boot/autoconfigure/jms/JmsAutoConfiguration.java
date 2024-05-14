@@ -19,7 +19,6 @@ package org.springframework.boot.autoconfigure.jms;
 import java.time.Duration;
 import java.util.List;
 
-import io.micrometer.observation.ObservationRegistry;
 import jakarta.jms.ConnectionFactory;
 import jakarta.jms.Message;
 
@@ -75,16 +74,12 @@ public class JmsAutoConfiguration {
 
 		private final ObjectProvider<MessageConverter> messageConverter;
 
-		private final ObjectProvider<ObservationRegistry> observationRegistry;
-
 		public JmsTemplateConfiguration(JmsProperties properties,
 				ObjectProvider<DestinationResolver> destinationResolver,
-				ObjectProvider<MessageConverter> messageConverter,
-				ObjectProvider<ObservationRegistry> observationRegistry) {
+				ObjectProvider<MessageConverter> messageConverter) {
 			this.properties = properties;
 			this.destinationResolver = destinationResolver;
 			this.messageConverter = messageConverter;
-			this.observationRegistry = observationRegistry;
 		}
 
 		@Bean
@@ -96,7 +91,6 @@ public class JmsAutoConfiguration {
 			template.setPubSubDomain(this.properties.isPubSubDomain());
 			map.from(this.destinationResolver::getIfUnique).whenNonNull().to(template::setDestinationResolver);
 			map.from(this.messageConverter::getIfUnique).whenNonNull().to(template::setMessageConverter);
-			map.from(this.observationRegistry::getIfUnique).whenNonNull().to(template::setObservationRegistry);
 			mapTemplateProperties(this.properties.getTemplate(), template);
 			return template;
 		}

@@ -34,10 +34,10 @@ class OracleEnvironment {
 
 	private final String database;
 
-	OracleEnvironment(Map<String, String> env, String defaultDatabase) {
+	OracleEnvironment(Map<String, String> env) {
 		this.username = env.getOrDefault("APP_USER", "system");
 		this.password = extractPassword(env);
-		this.database = env.getOrDefault("ORACLE_DATABASE", defaultDatabase);
+		this.database = env.getOrDefault("ORACLE_DATABASE", "xepdb1");
 	}
 
 	private String extractPassword(Map<String, String> env) {

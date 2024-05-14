@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,6 @@ import org.springframework.boot.context.properties.bind.PlaceholdersResolver;
 import org.springframework.boot.context.properties.source.ConfigurationPropertyName;
 import org.springframework.boot.context.properties.source.ConfigurationPropertySource;
 import org.springframework.boot.logging.DeferredLogFactory;
-import org.springframework.core.convert.ConversionService;
 import org.springframework.core.log.LogMessage;
 import org.springframework.util.ObjectUtils;
 
@@ -60,29 +59,24 @@ class ConfigDataEnvironmentContributors implements Iterable<ConfigDataEnvironmen
 
 	private final ConfigurableBootstrapContext bootstrapContext;
 
-	private final ConversionService conversionService;
-
 	/**
 	 * Create a new {@link ConfigDataEnvironmentContributors} instance.
 	 * @param logFactory the log factory
 	 * @param bootstrapContext the bootstrap context
 	 * @param contributors the initial set of contributors
-	 * @param conversionService the conversion service to use
 	 */
 	ConfigDataEnvironmentContributors(DeferredLogFactory logFactory, ConfigurableBootstrapContext bootstrapContext,
-			List<ConfigDataEnvironmentContributor> contributors, ConversionService conversionService) {
+			List<ConfigDataEnvironmentContributor> contributors) {
 		this.logger = logFactory.getLog(getClass());
 		this.bootstrapContext = bootstrapContext;
-		this.root = ConfigDataEnvironmentContributor.of(contributors, conversionService);
-		this.conversionService = conversionService;
+		this.root = ConfigDataEnvironmentContributor.of(contributors);
 	}
 
 	private ConfigDataEnvironmentContributors(Log logger, ConfigurableBootstrapContext bootstrapContext,
-			ConfigDataEnvironmentContributor root, ConversionService conversionService) {
+			ConfigDataEnvironmentContributor root) {
 		this.logger = logger;
 		this.bootstrapContext = bootstrapContext;
 		this.root = root;
-		this.conversionService = conversionService;
 	}
 
 	/**
@@ -110,7 +104,7 @@ class ConfigDataEnvironmentContributors implements Iterable<ConfigDataEnvironmen
 			if (contributor.getKind() == Kind.UNBOUND_IMPORT) {
 				ConfigDataEnvironmentContributor bound = contributor.withBoundProperties(result, activationContext);
 				result = new ConfigDataEnvironmentContributors(this.logger, this.bootstrapContext,
-						result.getRoot().withReplacement(contributor, bound), this.conversionService);
+						result.getRoot().withReplacement(contributor, bound));
 				continue;
 			}
 			ConfigDataLocationResolverContext locationResolverContext = new ContributorConfigDataLocationResolverContext(
@@ -124,7 +118,7 @@ class ConfigDataEnvironmentContributors implements Iterable<ConfigDataEnvironmen
 			ConfigDataEnvironmentContributor contributorAndChildren = contributor.withChildren(importPhase,
 					asContributors(imported));
 			result = new ConfigDataEnvironmentContributors(this.logger, this.bootstrapContext,
-					result.getRoot().withReplacement(contributor, contributorAndChildren), this.conversionService);
+					result.getRoot().withReplacement(contributor, contributorAndChildren));
 			processed++;
 		}
 	}
@@ -167,13 +161,12 @@ class ConfigDataEnvironmentContributors implements Iterable<ConfigDataEnvironmen
 			ConfigDataResource resource = resolutionResult.getResource();
 			boolean profileSpecific = resolutionResult.isProfileSpecific();
 			if (data.getPropertySources().isEmpty()) {
-				contributors.add(ConfigDataEnvironmentContributor.ofEmptyLocation(location, profileSpecific,
-						this.conversionService));
+				contributors.add(ConfigDataEnvironmentContributor.ofEmptyLocation(location, profileSpecific));
 			}
 			else {
 				for (int i = data.getPropertySources().size() - 1; i >= 0; i--) {
 					contributors.add(ConfigDataEnvironmentContributor.ofUnboundImport(location, resource,
-							profileSpecific, data, i, this.conversionService));
+							profileSpecific, data, i));
 				}
 			}
 		});
@@ -221,7 +214,7 @@ class ConfigDataEnvironmentContributors implements Iterable<ConfigDataEnvironmen
 		Iterable<ConfigurationPropertySource> sources = () -> getBinderSources(
 				filter.and((contributor) -> failOnInactiveSource || contributor.isActive(activationContext)));
 		PlaceholdersResolver placeholdersResolver = new ConfigDataEnvironmentContributorPlaceholdersResolver(this.root,
-				activationContext, null, failOnInactiveSource, this.conversionService);
+				activationContext, null, failOnInactiveSource);
 		BindHandler bindHandler = !failOnInactiveSource ? null : new InactiveSourceChecker(activationContext);
 		return new Binder(sources, placeholdersResolver, null, null, bindHandler);
 	}
@@ -333,7 +326,7 @@ class ConfigDataEnvironmentContributors implements Iterable<ConfigDataEnvironmen
 		/**
 		 * Throw an exception if an inactive contributor contains a bound value.
 		 */
-		FAIL_ON_BIND_TO_INACTIVE_SOURCE
+		FAIL_ON_BIND_TO_INACTIVE_SOURCE;
 
 	}
 

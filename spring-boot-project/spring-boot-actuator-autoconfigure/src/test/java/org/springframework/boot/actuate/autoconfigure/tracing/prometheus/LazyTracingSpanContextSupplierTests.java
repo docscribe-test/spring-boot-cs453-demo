@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,18 +23,17 @@ import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.boot.actuate.autoconfigure.tracing.prometheus.PrometheusExemplarsAutoConfiguration.LazyTracingSpanContextSupplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 
 /**
- * Tests for
- * {@link org.springframework.boot.actuate.autoconfigure.tracing.prometheus.PrometheusSimpleclientExemplarsAutoConfiguration.LazyTracingSpanContextSupplier}.
+ * Tests for {@link LazyTracingSpanContextSupplier}.
  *
  * @author Andy Wilkinson
  */
-@SuppressWarnings("removal")
 class LazyTracingSpanContextSupplierTests {
 
 	private final Tracer tracer = mock(Tracer.class);
@@ -63,7 +62,7 @@ class LazyTracingSpanContextSupplierTests {
 
 	};
 
-	private final org.springframework.boot.actuate.autoconfigure.tracing.prometheus.PrometheusSimpleclientExemplarsAutoConfiguration.LazyTracingSpanContextSupplier spanContextSupplier = new org.springframework.boot.actuate.autoconfigure.tracing.prometheus.PrometheusSimpleclientExemplarsAutoConfiguration.LazyTracingSpanContextSupplier(
+	private final LazyTracingSpanContextSupplier spanContextSupplier = new LazyTracingSpanContextSupplier(
 			this.objectProvider);
 
 	@Test

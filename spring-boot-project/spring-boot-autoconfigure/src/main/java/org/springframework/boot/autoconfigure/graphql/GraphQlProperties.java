@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -217,11 +217,6 @@ public class GraphQlProperties {
 		 */
 		private Duration connectionInitTimeout = Duration.ofSeconds(60);
 
-		/**
-		 * Maximum idle period before a server keep-alive ping is sent to client.
-		 */
-		private Duration keepAlive = null;
-
 		public String getPath() {
 			return this.path;
 		}
@@ -236,14 +231,6 @@ public class GraphQlProperties {
 
 		public void setConnectionInitTimeout(Duration connectionInitTimeout) {
 			this.connectionInitTimeout = connectionInitTimeout;
-		}
-
-		public Duration getKeepAlive() {
-			return this.keepAlive;
-		}
-
-		public void setKeepAlive(Duration keepAlive) {
-			this.keepAlive = keepAlive;
 		}
 
 	}

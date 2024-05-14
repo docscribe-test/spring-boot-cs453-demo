@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -150,8 +150,10 @@ public class RestTemplateBuilder {
 
 	/**
 	 * Set a root URL that should be applied to each request that starts with {@code '/'}.
-	 * The root URL will only apply when {@code String} variants of the
-	 * {@link RestTemplate} methods are used for specifying the request URL.
+	 * Since this works by adding a {@link UriTemplateHandler} to the
+	 * {@link RestTemplate}, the root URL will only apply when {@code String} variants of
+	 * the {@link RestTemplate} methods are used for specifying the request URL. See
+	 * {@link RootUriTemplateHandler} for details.
 	 * @param rootUri the root URI or {@code null}
 	 * @return a new builder instance
 	 */
@@ -637,7 +639,7 @@ public class RestTemplateBuilder {
 			restTemplate.setErrorHandler(this.errorHandler);
 		}
 		if (this.rootUri != null) {
-			RootUriBuilderFactory.applyTo(restTemplate, this.rootUri);
+			RootUriTemplateHandler.addTo(restTemplate, this.rootUri);
 		}
 		restTemplate.getInterceptors().addAll(this.interceptors);
 		if (!CollectionUtils.isEmpty(this.customizers)) {

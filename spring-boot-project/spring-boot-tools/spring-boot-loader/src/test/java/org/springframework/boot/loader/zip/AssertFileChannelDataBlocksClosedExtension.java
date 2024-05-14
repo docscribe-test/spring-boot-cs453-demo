@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.springframework.boot.loader.zip;
 import java.io.Closeable;
 import java.io.IOException;
 import java.lang.ref.Cleaner.Cleanable;
+import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -30,7 +31,7 @@ import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import org.springframework.boot.loader.ref.DefaultCleanerTracking;
-import org.springframework.boot.loader.zip.FileDataBlock.Tracker;
+import org.springframework.boot.loader.zip.FileChannelDataBlock.Tracker;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -44,17 +45,17 @@ class AssertFileChannelDataBlocksClosedExtension implements BeforeEachCallback, 
 	@Override
 	public void beforeEach(ExtensionContext context) throws Exception {
 		tracker.clear();
-		FileDataBlock.tracker = tracker;
+		FileChannelDataBlock.tracker = tracker;
 		DefaultCleanerTracking.set(tracker::addedCleanable);
 	}
 
 	@Override
 	public void afterEach(ExtensionContext context) throws Exception {
 		tracker.assertAllClosed();
-		FileDataBlock.tracker = Tracker.NONE;
+		FileChannelDataBlock.tracker = null;
 	}
 
-	private static final class OpenFilesTracker implements Tracker {
+	private static class OpenFilesTracker implements Tracker {
 
 		private final Set<Path> paths = new LinkedHashSet<>();
 
@@ -63,12 +64,12 @@ class AssertFileChannelDataBlocksClosedExtension implements BeforeEachCallback, 
 		private final List<Closeable> close = new ArrayList<>();
 
 		@Override
-		public void openedFileChannel(Path path) {
+		public void openedFileChannel(Path path, FileChannel fileChannel) {
 			this.paths.add(path);
 		}
 
 		@Override
-		public void closedFileChannel(Path path) {
+		public void closedFileChannel(Path path, FileChannel fileChannel) {
 			this.paths.remove(path);
 		}
 

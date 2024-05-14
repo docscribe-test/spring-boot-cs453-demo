@@ -38,20 +38,16 @@ public class JarLauncher extends ExecutableArchiveLauncher {
 
 	@Override
 	protected boolean isIncludedOnClassPath(Archive.Entry entry) {
-		return isLibraryFileOrClassesDirectory(entry);
-	}
-
-	@Override
-	protected String getEntryPathPrefix() {
-		return "BOOT-INF/";
-	}
-
-	static boolean isLibraryFileOrClassesDirectory(Archive.Entry entry) {
 		String name = entry.name();
 		if (entry.isDirectory()) {
 			return name.equals("BOOT-INF/classes/");
 		}
 		return name.startsWith("BOOT-INF/lib/");
+	}
+
+	@Override
+	protected String getEntryPathPrefix() {
+		return "BOOT-INF/";
 	}
 
 	public static void main(String[] args) throws Exception {

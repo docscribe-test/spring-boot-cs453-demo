@@ -24,23 +24,16 @@ import java.nio.ByteBuffer;
  *
  * @author Phillip Webb
  */
-class ByteArrayDataBlock implements CloseableDataBlock {
+class ByteArrayDataBlock implements DataBlock {
 
 	private final byte[] bytes;
-
-	private final int maxReadSize;
 
 	/**
 	 * Create a new {@link ByteArrayDataBlock} backed by the given bytes.
 	 * @param bytes the bytes to use
 	 */
 	ByteArrayDataBlock(byte... bytes) {
-		this(bytes, -1);
-	}
-
-	ByteArrayDataBlock(byte[] bytes, int maxReadSize) {
 		this.bytes = bytes;
-		this.maxReadSize = maxReadSize;
 	}
 
 	@Override
@@ -56,15 +49,8 @@ class ByteArrayDataBlock implements CloseableDataBlock {
 	private int read(ByteBuffer dst, int pos) {
 		int remaining = dst.remaining();
 		int length = Math.min(this.bytes.length - pos, remaining);
-		if (this.maxReadSize > 0 && length > this.maxReadSize) {
-			length = this.maxReadSize;
-		}
 		dst.put(this.bytes, pos, length);
 		return length;
-	}
-
-	@Override
-	public void close() throws IOException {
 	}
 
 }

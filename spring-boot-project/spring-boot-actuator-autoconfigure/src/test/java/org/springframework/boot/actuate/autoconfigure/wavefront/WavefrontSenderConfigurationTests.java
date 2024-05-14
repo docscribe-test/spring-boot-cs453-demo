@@ -30,6 +30,7 @@ import org.springframework.boot.test.context.FilteredClassLoader;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.assertj.core.api.Assertions.as;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -128,7 +129,8 @@ class WavefrontSenderConfigurationTests {
 					"management.wavefront.api-token=abcde")
 			.run((context) -> {
 				WavefrontSender sender = context.getBean(WavefrontSender.class);
-				assertThat(sender).extracting("tokenService").isInstanceOf(WavefrontTokenService.class);
+				Object tokenService = ReflectionTestUtils.getField(sender, "tokenService");
+				assertThat(tokenService).isInstanceOf(WavefrontTokenService.class);
 			});
 	}
 
@@ -139,7 +141,8 @@ class WavefrontSenderConfigurationTests {
 					"management.wavefront.api-token=abcde")
 			.run((context) -> {
 				WavefrontSender sender = context.getBean(WavefrontSender.class);
-				assertThat(sender).extracting("tokenService").isInstanceOf(CSPTokenService.class);
+				Object tokenService = ReflectionTestUtils.getField(sender, "tokenService");
+				assertThat(tokenService).isInstanceOf(CSPTokenService.class);
 			});
 	}
 
@@ -150,7 +153,8 @@ class WavefrontSenderConfigurationTests {
 					"management.wavefront.api-token=clientid=cid,clientsecret=csec")
 			.run((context) -> {
 				WavefrontSender sender = context.getBean(WavefrontSender.class);
-				assertThat(sender).extracting("tokenService").isInstanceOf(CSPTokenService.class);
+				Object tokenService = ReflectionTestUtils.getField(sender, "tokenService");
+				assertThat(tokenService).isInstanceOf(CSPTokenService.class);
 			});
 	}
 
@@ -158,7 +162,8 @@ class WavefrontSenderConfigurationTests {
 	void shouldApplyTokenTypeNoToken() {
 		this.contextRunner.withPropertyValues("management.wavefront.api-token-type=NO_TOKEN").run((context) -> {
 			WavefrontSender sender = context.getBean(WavefrontSender.class);
-			assertThat(sender).extracting("tokenService").isInstanceOf(NoopProxyTokenService.class);
+			Object tokenService = ReflectionTestUtils.getField(sender, "tokenService");
+			assertThat(tokenService).isInstanceOf(NoopProxyTokenService.class);
 		});
 	}
 
