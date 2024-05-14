@@ -72,6 +72,11 @@ public class WebFluxObservationAutoConfiguration {
 
 	private final ObservationProperties observationProperties;
 
+	/**
+	 * Constructs a new instance of WebFluxObservationAutoConfiguration.
+	 *
+	 * @param observationProperties the observation properties
+	 */
 	public WebFluxObservationAutoConfiguration(ObservationProperties observationProperties) {
 		this.observationProperties = observationProperties;
 	}
@@ -128,6 +133,12 @@ public class WebFluxObservationAutoConfiguration {
 			return Path.of(webFluxBasePath, pathMappedEndpoints.getBasePath()).toString();
 		}
 
+		/**
+		 * Retrieves the base path for WebFlux observation.
+		 *
+		 * @param webFluxProperties the WebFlux properties
+		 * @return the base path for WebFlux observation
+		 */
 		private static String getWebFluxBasePath(WebFluxProperties webFluxProperties) {
 			return (webFluxProperties.getBasePath() != null) ? webFluxProperties.getBasePath() : "";
 		}

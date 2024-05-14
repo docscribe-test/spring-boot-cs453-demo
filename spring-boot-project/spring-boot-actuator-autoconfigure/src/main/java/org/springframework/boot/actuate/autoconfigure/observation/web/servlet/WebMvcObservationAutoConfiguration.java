@@ -73,6 +73,16 @@ import org.springframework.web.servlet.DispatcherServlet;
 @ConditionalOnBean(ObservationRegistry.class)
 @EnableConfigurationProperties({ MetricsProperties.class, ObservationProperties.class, ServerProperties.class,
 		WebMvcProperties.class })
+/**
+ * {@link EnableAutoConfiguration Auto-configuration} for instrumentation of Spring Web
+ * MVC servlet-based request mappings.
+ *
+ * @author Brian Clozel
+ * @author Jon Schneider
+ * @author Dmytro Nosan
+ * @author Jonatan Ivanov
+ * @since 3.0.0
+ */
 public class WebMvcObservationAutoConfiguration {
 
 	@Bean

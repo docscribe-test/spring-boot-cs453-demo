@@ -317,10 +317,23 @@ class WebMvcObservationAutoConfigurationTests {
 				});
 	}
 
+	/**
+	* Initializes and returns a MeterRegistry with the provided AssertableWebApplicationContext.
+	* @param context The AssertableWebApplicationContext to use for initialization.
+	* @return The initialized MeterRegistry.
+	* @throws Exception if an error occurs during initialization.
+	*/
 	private MeterRegistry getInitializedMeterRegistry(AssertableWebApplicationContext context) throws Exception {
 		return getInitializedMeterRegistry(context, "/test0", "/test1", "/test2");
 	}
 
+	/**
+	* Initializes and returns a MeterRegistry with the provided AssertableWebApplicationContext and URLs.
+	* @param context The AssertableWebApplicationContext to use for initialization.
+	* @param urls The URLs to use for testing.
+	* @return The initialized MeterRegistry.
+	* @throws Exception if an error occurs during initialization.
+	*/
 	private MeterRegistry getInitializedMeterRegistry(AssertableWebApplicationContext context, String... urls)
 			throws Exception {
 		assertThat(context).hasSingleBean(FilterRegistrationBean.class);
