@@ -73,12 +73,18 @@ class WebMvcObservationAutoConfigurationTests {
 			.withConfiguration(AutoConfigurations.of(ObservationAutoConfiguration.class))
 			.withConfiguration(AutoConfigurations.of(WebMvcObservationAutoConfiguration.class));
 
+	/**
+	 * Verifies that the configuration backs off when MeterRegistry is missing.
+	 */
 	void backsOffWhenMeterRegistryIsMissing() {
 		new WebApplicationContextRunner()
 				.withConfiguration(AutoConfigurations.of(WebMvcObservationAutoConfiguration.class))
 				.run((context) -> assertThat(context).doesNotHaveBean(FilterRegistrationBean.class));
 	}
 
+	/**
+	 * Verifies that the configuration defines a filter when the registry is present.
+	 */
 	void definesFilterWhenRegistryIsPresent() {
 		this.contextRunner.run((context) -> {
 			assertThat(context).hasSingleBean(FilterRegistrationBean.class);
@@ -87,6 +93,9 @@ class WebMvcObservationAutoConfigurationTests {
 		});
 	}
 
+	/**
+	 * Verifies the behavior when a custom convention is present.
+	 */
 	void customConventionWhenPresent() {
 		this.contextRunner.withUserConfiguration(CustomConventionConfiguration.class)
 				.run((context) -> assertThat(context.getBean(FilterRegistrationBean.class).getFilter())
@@ -94,6 +103,9 @@ class WebMvcObservationAutoConfigurationTests {
 						.isInstanceOf(CustomConvention.class));
 	}
 
+	/**
+	 * Verifies that the filter registration has the expected dispatcher types and order.
+	 */
 	void filterRegistrationHasExpectedDispatcherTypesAndOrder() {
 		this.contextRunner.run((context) -> {
 			FilterRegistrationBean<?> registration = context.getBean(FilterRegistrationBean.class);
@@ -103,6 +115,9 @@ class WebMvcObservationAutoConfigurationTests {
 		});
 	}
 
+	/**
+	 * Verifies that the filter registration backs off when another ServerHttpObservationFilter registration is present.
+	 */
 	void filterRegistrationBacksOffWithAnotherServerHttpObservationFilterRegistration() {
 		this.contextRunner.withUserConfiguration(TestServerHttpObservationFilterRegistrationConfiguration.class)
 				.run((context) -> {
@@ -112,22 +127,35 @@ class WebMvcObservationAutoConfigurationTests {
 				});
 	}
 
+	/**
+	 * Verifies that the filter registration backs off when another ServerHttpObservationFilter is present.
+	 */
 	void filterRegistrationBacksOffWithAnotherServerHttpObservationFilter() {
 		this.contextRunner.withUserConfiguration(TestServerHttpObservationFilterConfiguration.class)
 				.run((context) -> assertThat(context).doesNotHaveBean(FilterRegistrationBean.class)
 						.hasSingleBean(ServerHttpObservationFilter.class));
 	}
 
+	/**
+	 * Verifies that the filter registration does not back off when other filter registrations are present.
+	 */
 	void filterRegistrationDoesNotBackOffWithOtherFilterRegistration() {
 		this.contextRunner.withUserConfiguration(TestFilterRegistrationConfiguration.class)
 				.run((context) -> assertThat(context).hasBean("testFilter").hasBean("webMvcObservationFilter"));
 	}
 
+	/**
+	 * Verifies that the filter registration does not back off when other filters are present.
+	 */
 	void filterRegistrationDoesNotBackOffWithOtherFilter() {
 		this.contextRunner.withUserConfiguration(TestFilterConfiguration.class)
 				.run((context) -> assertThat(context).hasBean("testFilter").hasBean("webMvcObservationFilter"));
 	}
 
+	/**
+	 * Verifies the behavior when the maximum number of URIs is reached and further URIs are denied.
+	 * @param output The output stream to capture the output.
+	 */
 	void afterMaxUrisReachedFurtherUrisAreDenied(CapturedOutput output) {
 		this.contextRunner.withUserConfiguration(TestController.class)
 				.withConfiguration(AutoConfigurations.of(MetricsAutoConfiguration.class, ObservationAutoConfiguration.class,
@@ -140,6 +168,10 @@ class WebMvcObservationAutoConfigurationTests {
 				});
 	}
 
+	/**
+	 * Verifies the behavior when the maximum number of URIs is reached and further URIs are denied using a custom observation name.
+	 * @param output The output stream to capture the output.
+	 */
 	void afterMaxUrisReachedFurtherUrisAreDeniedWhenUsingCustomObservationName(CapturedOutput output) {
 		this.contextRunner.withUserConfiguration(TestController.class)
 				.withConfiguration(AutoConfigurations.of(MetricsAutoConfiguration.class, ObservationAutoConfiguration.class,
@@ -153,6 +185,10 @@ class WebMvcObservationAutoConfigurationTests {
 				});
 	}
 
+	/**
+	 * Verifies the behavior when the maximum number of URIs is not reached, and no denial or logging occurs.
+	 * @param output The output stream to capture the output.
+	 */
 	void shouldNotDenyNorLogIfMaxUrisIsNotReached(CapturedOutput output) {
 		this.contextRunner.withUserConfiguration(TestController.class)
 				.withConfiguration(AutoConfigurations.of(MetricsAutoConfiguration.class, ObservationAutoConfiguration.class,
@@ -165,6 +201,9 @@ class WebMvcObservationAutoConfigurationTests {
 				});
 	}
 
+	/**
+	 * Verifies that observations are recorded when an Actuator endpoint is called.
+	 */
 	void whenAnActuatorEndpointIsCalledObservationsShouldBeRecorded() {
 		this.contextRunner.withUserConfiguration(TestController.class, TestObservationRegistryConfiguration.class)
 				.withConfiguration(AutoConfigurations.of(InfoEndpointAutoConfiguration.class, WebMvcAutoConfiguration.class,
@@ -183,6 +222,9 @@ class WebMvcObservationAutoConfigurationTests {
 				});
 	}
 
+	/**
+	 * Verifies that observations are recorded when Actuator observations are enabled.
+	 */
 	void whenActuatorObservationsEnabledObservationsShouldBeRecorded() {
 		this.contextRunner.withUserConfiguration(TestController.class, TestObservationRegistryConfiguration.class)
 				.withConfiguration(AutoConfigurations.of(InfoEndpointAutoConfiguration.class, WebMvcAutoConfiguration.class,
@@ -202,6 +244,9 @@ class WebMvcObservationAutoConfigurationTests {
 				});
 	}
 
+	/**
+	 * Verifies that observations are not recorded when Actuator observations are disabled.
+	 */
 	void whenActuatorObservationsDisabledObservationsShouldNotBeRecorded() {
 		this.contextRunner.withUserConfiguration(TestController.class, TestObservationRegistryConfiguration.class)
 				.withConfiguration(AutoConfigurations.of(InfoEndpointAutoConfiguration.class, WebMvcAutoConfiguration.class,
@@ -220,6 +265,9 @@ class WebMvcObservationAutoConfigurationTests {
 				});
 	}
 
+	/**
+	 * Verifies that observations are not recorded when Actuator observations are disabled using a custom endpoint base path.
+	 */
 	void whenActuatorObservationsDisabledObservationsShouldNotBeRecordedUsingCustomEndpointBasePath() {
 		this.contextRunner.withUserConfiguration(TestController.class, TestObservationRegistryConfiguration.class)
 				.withConfiguration(AutoConfigurations.of(InfoEndpointAutoConfiguration.class, WebMvcAutoConfiguration.class,
@@ -239,6 +287,9 @@ class WebMvcObservationAutoConfigurationTests {
 				});
 	}
 
+	/**
+	 * Verifies that observations are not recorded when Actuator observations are disabled using a custom context path.
+	 */
 	void whenActuatorObservationsDisabledObservationsShouldNotBeRecordedUsingCustomContextPath() {
 		this.contextRunner.withUserConfiguration(TestController.class, TestObservationRegistryConfiguration.class)
 				.withConfiguration(AutoConfigurations.of(InfoEndpointAutoConfiguration.class, WebMvcAutoConfiguration.class,
@@ -258,6 +309,9 @@ class WebMvcObservationAutoConfigurationTests {
 				});
 	}
 
+	/**
+	 * Verifies that observations are not recorded when Actuator observations are disabled using a custom servlet path.
+	 */
 	void whenActuatorObservationsDisabledObservationsShouldNotBeRecordedUsingCustomServletPath() {
 		this.contextRunner.withUserConfiguration(TestController.class, TestObservationRegistryConfiguration.class)
 				.withConfiguration(AutoConfigurations.of(InfoEndpointAutoConfiguration.class, WebMvcAutoConfiguration.class,
@@ -277,6 +331,9 @@ class WebMvcObservationAutoConfigurationTests {
 				});
 	}
 
+	/**
+	 * Verifies that observations are not recorded when Actuator observations are disabled using custom context path, servlet path, and endpoint base path.
+	 */
 	void whenActuatorObservationsDisabledObservationsShouldNotBeRecordedUsingCustomContextPathAndCustomServletPathAndCustomEndpointBasePath() {
 		this.contextRunner.withUserConfiguration(TestController.class, TestObservationRegistryConfiguration.class)
 				.withConfiguration(AutoConfigurations.of(InfoEndpointAutoConfiguration.class, WebMvcAutoConfiguration.class,
