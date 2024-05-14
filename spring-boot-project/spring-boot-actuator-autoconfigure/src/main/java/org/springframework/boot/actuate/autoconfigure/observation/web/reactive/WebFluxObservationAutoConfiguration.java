@@ -61,14 +61,27 @@ import org.springframework.web.filter.reactive.ServerHttpObservationFilter;
  * @author Jonatan Ivanov
  * @since 3.0.0
  */
+/**
+* This class is for configuring the WebFlux observation.
+*/
 public class WebFluxObservationAutoConfiguration {
 
 	private final ObservationProperties observationProperties;
 
+	/**
+	* This constructor is used to initialize the WebFluxObservationAutoConfiguration object.
+	* @param observationProperties The properties of the observation.
+	*/
 	public WebFluxObservationAutoConfiguration(ObservationProperties observationProperties) {
 		this.observationProperties = observationProperties;
 	}
 
+	/**
+	* This method is used to create a new ServerHttpObservationFilter.
+	* @param registry The registry of the observation.
+	* @param customConvention The convention of the observation.
+	* @return A new ServerHttpObservationFilter.
+	*/
 	public ServerHttpObservationFilter webfluxObservationFilter(ObservationRegistry registry, ObjectProvider customConvention) {
 		String name = this.observationProperties.getHttp().getServer().getRequests().getName();
 		ServerRequestObservationConvention convention = customConvention
@@ -76,6 +89,12 @@ public class WebFluxObservationAutoConfiguration {
 		return new ServerHttpObservationFilter(registry, convention);
 	}
 
+	/**
+	* This method is used to create a new MeterFilter.
+	* @param metricsProperties The properties of the metrics.
+	* @param observationProperties The properties of the observation.
+	* @return A new MeterFilter.
+	*/
 	public MeterFilter metricsHttpServerUriTagFilter(MetricsProperties metricsProperties, ObservationProperties observationProperties) {
 		String name = observationProperties.getHttp().getServer().getRequests().getName();
 		MeterFilter filter = new OnlyOnceLoggingDenyMeterFilter(
@@ -84,6 +103,11 @@ public class WebFluxObservationAutoConfiguration {
 				filter);
 	}
 
+	/**
+	* This method is used to create a new MeterFilter.
+	* @param metricsProperties The properties of the metrics.
+	* @return A new MeterFilter.
+	*/
 	public MeterFilter metricsHttpServerUriTagFilter(MetricsProperties metricsProperties) {
 		String name = observationProperties.getHttp().getServer().getRequests().getName();
 		MeterFilter filter = new OnlyOnceLoggingDenyMeterFilter(
@@ -94,6 +118,12 @@ public class WebFluxObservationAutoConfiguration {
 				filter);
 	}
 
+	/**
+	* This method is used to create a new ObservationPredicate.
+	* @param webFluxProperties The properties of the WebFlux.
+	* @param pathMappedEndpoints The endpoints of the path.
+	* @return A new ObservationPredicate.
+	*/
 	public ObservationPredicate actuatorWebEndpointObservationPredicate(WebFluxProperties webFluxProperties, PathMappedEndpoints pathMappedEndpoints) {
 		return (name, context) -> {
 			if (context instanceof ServerRequestObservationContext serverContext) {
@@ -105,11 +135,22 @@ public class WebFluxObservationAutoConfiguration {
 
 	}
 
+	/**
+	* This method is used to get the endpoint path.
+	* @param webFluxProperties The properties of the WebFlux.
+	* @param pathMappedEndpoints The endpoints of the path.
+	* @return The endpoint path.
+	*/
 	private static String getEndpointPath(WebFluxProperties webFluxProperties, PathMappedEndpoints pathMappedEndpoints) {
 		String webFluxBasePath = getWebFluxBasePath(webFluxProperties);
 		return Path.of(webFluxBasePath, pathMappedEndpoints.getBasePath()).toString();
 	}
 
+	/**
+	* This method is used to get the base path of the WebFlux.
+	* @param webFluxProperties The properties of the WebFlux.
+	* @return The base path of the WebFlux.
+	*/
 	private static String getWebFluxBasePath(WebFluxProperties webFluxProperties) {
 		return (webFluxProperties.getBasePath() != null) ? webFluxProperties.getBasePath() : "";
 	}

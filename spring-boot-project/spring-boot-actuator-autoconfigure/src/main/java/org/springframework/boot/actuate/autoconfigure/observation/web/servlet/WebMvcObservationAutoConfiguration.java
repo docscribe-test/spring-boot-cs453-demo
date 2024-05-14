@@ -71,6 +71,13 @@ public class WebMvcObservationAutoConfiguration {
 	@Configuration(proxyBeanMethods = false)
 	@ConditionalOnClass(MeterRegistry.class)
 	@ConditionalOnBean(MeterRegistry.class)
+	/**
+	* Creates a FilterRegistrationBean that registers the ServerHttpObservationFilter for web request observation.
+	* @param registry The registry for observation.
+	* @param customConvention The provider for custom conventions.
+	* @param observationProperties The properties for observation.
+	* @return The FilterRegistrationBean for ServerHttpObservationFilter.
+	*/
 	public FilterRegistrationBean<ServerHttpObservationFilter> webMvcObservationFilter(ObservationRegistry registry, ObjectProvider customConvention, ObservationProperties observationProperties) {
 		String name = observationProperties.getHttp().getServer().getRequests().getName();
 		ServerRequestObservationConvention convention = customConvention
@@ -85,6 +92,12 @@ public class WebMvcObservationAutoConfiguration {
 	@Configuration(proxyBeanMethods = false)
 	@ConditionalOnClass(MeterRegistry.class)
 	@ConditionalOnBean(MeterRegistry.class)
+	/**
+	* Creates a MeterFilter to filter metrics based on HTTP server URI tags.
+	* @param observationProperties The properties for observation.
+	* @param metricsProperties The properties for metrics.
+	* @return The MeterFilter for HTTP server URI tags.
+	*/
 	public MeterFilter metricsHttpServerUriTagFilter(ObservationProperties observationProperties, MetricsProperties metricsProperties) {
 		String name = observationProperties.getHttp().getServer().getRequests().getName();
 		MeterFilter filter = new OnlyOnceLoggingDenyMeterFilter(
@@ -93,6 +106,13 @@ public class WebMvcObservationAutoConfiguration {
 				filter);
 	}
 
+	/**
+	* Creates an ObservationPredicate to filter observations based on web endpoint paths.
+	* @param serverProperties The properties for server.
+	* @param webMvcProperties The properties for Web MVC.
+	* @param pathMappedEndpoints The endpoints mapped by path.
+	* @return The ObservationPredicate for web endpoint paths.
+	*/
 	public ObservationPredicate actuatorWebEndpointObservationPredicate(ServerProperties serverProperties, WebMvcProperties webMvcProperties, PathMappedEndpoints pathMappedEndpoints) {
 		return (name, context) -> {
 			if (context instanceof ServerRequestObservationContext serverContext) {
@@ -103,17 +123,34 @@ public class WebMvcObservationAutoConfiguration {
 		};
 	}
 
+	/**
+	* Gets the endpoint path based on server properties, Web MVC properties, and mapped endpoints.
+	* @param serverProperties The properties for server.
+	* @param webMvcProperties The properties for Web MVC.
+	* @param pathMappedEndpoints The endpoints mapped by path.
+	* @return The endpoint path.
+	*/
 	private static String getEndpointPath(ServerProperties serverProperties, WebMvcProperties webMvcProperties, PathMappedEndpoints pathMappedEndpoints) {
 		String contextPath = getContextPath(serverProperties);
 		String servletPath = getServletPath(webMvcProperties);
 		return Path.of(contextPath, servletPath, pathMappedEndpoints.getBasePath()).toString();
 	}
 
+	/**
+	* Gets the context path from the server properties.
+	* @param serverProperties The properties for server.
+	* @return The context path.
+	*/
 	private static String getContextPath(ServerProperties serverProperties) {
 		Servlet servlet = serverProperties.getServlet();
 		return (servlet.getContextPath() != null) ? servlet.getContextPath() : "";
 	}
 
+	/**
+	* Gets the servlet path from the Web MVC properties.
+	* @param webMvcProperties The properties for Web MVC.
+	* @return The servlet path.
+	*/
 	private static String getServletPath(WebMvcProperties webMvcProperties) {
 		WebMvcProperties.Servlet servletProperties = webMvcProperties.getServlet();
 		return (servletProperties.getPath() != null) ? servletProperties.getPath() : "";

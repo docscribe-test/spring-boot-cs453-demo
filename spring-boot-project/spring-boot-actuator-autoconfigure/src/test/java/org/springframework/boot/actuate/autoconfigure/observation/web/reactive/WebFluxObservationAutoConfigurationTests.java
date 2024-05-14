@@ -71,10 +71,16 @@ class WebFluxObservationAutoConfigurationTests {
 			.withConfiguration(
 					AutoConfigurations.of(ObservationAutoConfiguration.class, WebFluxObservationAutoConfiguration.class));
 
+	/**
+	* This method tests if the WebFluxObservationFilter is provided.
+	*/
 	void shouldProvideWebFluxObservationFilter() {
 		this.contextRunner.run((context) -> assertThat(context).hasSingleBean(ServerHttpObservationFilter.class));
 	}
 
+	/**
+	* This method tests if the WebFluxObservationFilter is ordered.
+	*/
 	void shouldProvideWebFluxObservationFilterOrdered() {
 		this.contextRunner.withBean(FirstWebFilter.class).withBean(ThirdWebFilter.class).run((context) -> {
 			List<WebFilter> webFilters = context.getBeanProvider(WebFilter.class).orderedStream().toList();
@@ -84,6 +90,9 @@ class WebFluxObservationAutoConfigurationTests {
 		});
 	}
 
+	/**
+	* This method tests if the custom convention is used when available.
+	*/
 	void shouldUseCustomConventionWhenAvailable() {
 		this.contextRunner.withUserConfiguration(CustomConventionConfiguration.class).run((context) -> {
 			assertThat(context).hasSingleBean(ServerHttpObservationFilter.class);
@@ -93,6 +102,10 @@ class WebFluxObservationAutoConfigurationTests {
 		});
 	}
 
+	/**
+	* This method tests if further URIs are denied after the maximum number of URIs is reached.
+	* @param output The captured output.
+	*/
 	void afterMaxUrisReachedFurtherUrisAreDenied(CapturedOutput output) {
 		this.contextRunner.withUserConfiguration(TestController.class)
 				.withConfiguration(AutoConfigurations.of(MetricsAutoConfiguration.class, ObservationAutoConfiguration.class,
@@ -105,6 +118,10 @@ class WebFluxObservationAutoConfigurationTests {
 				});
 	}
 
+	/**
+	* This method tests if further URIs are denied when using a custom observation name after the maximum number of URIs is reached.
+	* @param output The captured output.
+	*/
 	void afterMaxUrisReachedFurtherUrisAreDeniedWhenUsingCustomObservationName(CapturedOutput output) {
 		this.contextRunner.withUserConfiguration(TestController.class)
 				.withConfiguration(AutoConfigurations.of(MetricsAutoConfiguration.class, ObservationAutoConfiguration.class,
@@ -118,6 +135,9 @@ class WebFluxObservationAutoConfigurationTests {
 				});
 	}
 
+	/**
+	* This method tests if observations should be recorded when an actuator endpoint is called.
+	*/
 	void whenAnActuatorEndpointIsCalledObservationsShouldBeRecorded() {
 		this.contextRunner.withUserConfiguration(TestController.class, TestObservationRegistryConfiguration.class)
 				.withConfiguration(AutoConfigurations.of(InfoEndpointAutoConfiguration.class,
@@ -135,6 +155,9 @@ class WebFluxObservationAutoConfigurationTests {
 				});
 	}
 
+	/**
+	* This method tests if observations should be recorded when actuator observations are enabled.
+	*/
 	void whenActuatorObservationsEnabledObservationsShouldBeRecorded() {
 		this.contextRunner.withUserConfiguration(TestController.class, TestObservationRegistryConfiguration.class)
 				.withConfiguration(AutoConfigurations.of(InfoEndpointAutoConfiguration.class,
@@ -153,6 +176,9 @@ class WebFluxObservationAutoConfigurationTests {
 				});
 	}
 
+	/**
+	* This method tests if observations should not be recorded when actuator observations are disabled.
+	*/
 	void whenActuatorObservationsDisabledObservationsShouldNotBeRecorded() {
 		this.contextRunner.withUserConfiguration(TestController.class, TestObservationRegistryConfiguration.class)
 				.withConfiguration(AutoConfigurations.of(InfoEndpointAutoConfiguration.class,
@@ -171,6 +197,9 @@ class WebFluxObservationAutoConfigurationTests {
 				});
 	}
 
+	/**
+	* This method tests if observations should not be recorded using a custom endpoint base path when actuator observations are disabled.
+	*/
 	void whenActuatorObservationsDisabledObservationsShouldNotBeRecordedUsingCustomEndpointBasePath() {
 		this.contextRunner.withUserConfiguration(TestController.class, TestObservationRegistryConfiguration.class)
 				.withConfiguration(AutoConfigurations.of(InfoEndpointAutoConfiguration.class,
@@ -191,6 +220,9 @@ class WebFluxObservationAutoConfigurationTests {
 	}
 
 
+	/**
+	* This method tests if observations should not be recorded using a custom Webflux base path when actuator observations are disabled.
+	*/
 	void whenActuatorObservationsDisabledObservationsShouldNotBeRecordedUsingCustomWebfluxBasePath() {
 		new ReactiveWebApplicationContextRunner(AnnotationConfigReactiveWebServerApplicationContext::new)
 				.with(MetricsRun.simple())
@@ -217,6 +249,9 @@ class WebFluxObservationAutoConfigurationTests {
 	 * Due to limitations in {@code WebTestClient}, these tests need to start a real
 	 * webserver and utilize a real http client with a real http request.
 	 */
+	/**
+	* This method tests if observations should not be recorded using a custom Webflux base path and custom endpoint base path when actuator observations are disabled.
+	*/
 	void whenActuatorObservationsDisabledObservationsShouldNotBeRecordedUsingCustomWebfluxBasePathAndCustomEndpointBasePath() {
 		new ReactiveWebApplicationContextRunner(AnnotationConfigReactiveWebServerApplicationContext::new)
 				.with(MetricsRun.simple())
@@ -240,6 +275,10 @@ class WebFluxObservationAutoConfigurationTests {
 				});
 	}
 
+	/**
+	* This method tests if it should neither deny nor log if the maximum number of URIs is not reached.
+	* @param output The captured output.
+	*/
 	void shouldNotDenyNorLogIfMaxUrisIsNotReached(CapturedOutput output) {
 		this.contextRunner.withUserConfiguration(TestController.class)
 				.withConfiguration(AutoConfigurations.of(MetricsAutoConfiguration.class, ObservationAutoConfiguration.class,
@@ -252,11 +291,22 @@ class WebFluxObservationAutoConfigurationTests {
 				});
 	}
 
+	/**
+	* This method gets the initialized meter registry.
+	* @param context The assertable reactive web application context.
+	* @return The initialized meter registry.
+	*/
 	private MeterRegistry getInitializedMeterRegistry(AssertableReactiveWebApplicationContext context)
 			throws Exception {
 		return getInitializedMeterRegistry(context, "/test0", "/test1", "/test2");
 	}
 
+	/**
+	* This method gets the initialized meter registry.
+	* @param context The assertable reactive web application context.
+	* @param urls The URLs.
+	* @return The initialized meter registry.
+	*/
 	private MeterRegistry getInitializedMeterRegistry(AssertableReactiveWebApplicationContext context, String... urls) {
 		assertThat(context).hasSingleBean(ServerHttpObservationFilter.class);
 		WebTestClient client = WebTestClient.bindToApplicationContext(context).build();
@@ -281,6 +331,11 @@ class WebFluxObservationAutoConfigurationTests {
 		return context.getBean(TestObservationRegistry.class);
 	}
 
+	/**
+	* This method creates a web test client for the local port.
+	* @param context The assertable reactive web application context.
+	* @return The web test client.
+	*/
 	private WebTestClient createWebTestClientForLocalPort(AssertableReactiveWebApplicationContext context) {
 		int port = ((AnnotationConfigReactiveWebServerApplicationContext) context.getSourceApplicationContext())
 				.getWebServer()
