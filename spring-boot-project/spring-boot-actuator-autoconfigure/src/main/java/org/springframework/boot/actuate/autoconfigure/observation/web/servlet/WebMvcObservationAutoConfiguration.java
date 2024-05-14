@@ -68,6 +68,7 @@ import org.springframework.web.servlet.DispatcherServlet;
  */
 public class WebMvcObservationAutoConfiguration {
 
+	@Bean
 	public FilterRegistrationBean<ServerHttpObservationFilter> webMvcObservationFilter(ObservationRegistry registry, ObjectProvider customConvention, ObservationProperties observationProperties) {
 		String name = observationProperties.getHttp().getServer().getRequests().getName();
 		ServerRequestObservationConvention convention = customConvention
@@ -79,6 +80,7 @@ public class WebMvcObservationAutoConfiguration {
 		return registration;
 	}
 
+	@Bean
 	public MeterFilter metricsHttpServerUriTagFilter(ObservationProperties observationProperties, MetricsProperties metricsProperties) {
 		String name = observationProperties.getHttp().getServer().getRequests().getName();
 		MeterFilter filter = new OnlyOnceLoggingDenyMeterFilter(

@@ -84,6 +84,16 @@ public class WebFluxObservationAutoConfiguration {
 				filter);
 	}
 
+	public MeterFilter metricsHttpServerUriTagFilter(MetricsProperties metricsProperties) {
+		String name = observationProperties.getHttp().getServer().getRequests().getName();
+		MeterFilter filter = new OnlyOnceLoggingDenyMeterFilter(
+				() -> "Reached the maximum number of URI tags for '%s'.".formatted(name));
+		MeterFilter filter = new OnlyOnceLoggingDenyMeterFilter(
+				() -> "Reached the maximum number of URI tags for '%s'.".formatted(name));
+		return MeterFilter.maximumAllowableTags(name, "uri", metricsProperties.getWeb().getServer().getMaxUriTags(),
+				filter);
+	}
+
 	public ObservationPredicate actuatorWebEndpointObservationPredicate(WebFluxProperties webFluxProperties, PathMappedEndpoints pathMappedEndpoints) {
 		return (name, context) -> {
 			if (context instanceof ServerRequestObservationContext serverContext) {
