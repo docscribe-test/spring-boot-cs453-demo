@@ -72,6 +72,10 @@ public class WebFluxObservationAutoConfiguration {
 
 	private final ObservationProperties observationProperties;
 
+	/**
+	* Constructor for WebFluxObservationAutoConfiguration.
+	* @param observationProperties The properties related to observation.
+	*/
 	public WebFluxObservationAutoConfiguration(ObservationProperties observationProperties) {
 		this.observationProperties = observationProperties;
 	}
@@ -90,6 +94,9 @@ public class WebFluxObservationAutoConfiguration {
 	@Configuration(proxyBeanMethods = false)
 	@ConditionalOnClass(MeterRegistry.class)
 	@ConditionalOnBean(MeterRegistry.class)
+	/**
+	* This is a configuration class for meter filters.
+	*/
 	static class MeterFilterConfiguration {
 
 		@Bean
@@ -107,6 +114,9 @@ public class WebFluxObservationAutoConfiguration {
 
 	@Configuration(proxyBeanMethods = false)
 	@ConditionalOnProperty(value = "management.observations.http.server.actuator.enabled", havingValue = "false")
+	/**
+	* This is a configuration class for actuator web endpoint observations.
+	*/
 	static class ActuatorWebEndpointObservationConfiguration {
 
 		@Bean
@@ -128,6 +138,11 @@ public class WebFluxObservationAutoConfiguration {
 			return Path.of(webFluxBasePath, pathMappedEndpoints.getBasePath()).toString();
 		}
 
+		/**
+		* Gets the base path for WebFlux.
+		* @param webFluxProperties The properties related to WebFlux.
+		* @return The base path for WebFlux.
+		*/
 		private static String getWebFluxBasePath(WebFluxProperties webFluxProperties) {
 			return (webFluxProperties.getBasePath() != null) ? webFluxProperties.getBasePath() : "";
 		}

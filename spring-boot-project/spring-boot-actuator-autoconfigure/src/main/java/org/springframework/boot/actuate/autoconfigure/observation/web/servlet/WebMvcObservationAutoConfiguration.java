@@ -73,6 +73,9 @@ import org.springframework.web.servlet.DispatcherServlet;
 @ConditionalOnBean(ObservationRegistry.class)
 @EnableConfigurationProperties({ MetricsProperties.class, ObservationProperties.class, ServerProperties.class,
 		WebMvcProperties.class })
+/**
+* This is a configuration class for Web MVC observations.
+*/
 public class WebMvcObservationAutoConfiguration {
 
 	@Bean
@@ -131,11 +134,21 @@ public class WebMvcObservationAutoConfiguration {
 			return Path.of(contextPath, servletPath, pathMappedEndpoints.getBasePath()).toString();
 		}
 
+		/**
+		* This method is used to get the context path from server properties.
+		* @param serverProperties Properties for the server.
+		* @return Context path as a String.
+		*/
 		private static String getContextPath(ServerProperties serverProperties) {
 			Servlet servlet = serverProperties.getServlet();
 			return (servlet.getContextPath() != null) ? servlet.getContextPath() : "";
 		}
 
+		/**
+		* This method is used to get the servlet path from Web MVC properties.
+		* @param webMvcProperties Properties for the Web MVC.
+		* @return Servlet path as a String.
+		*/
 		private static String getServletPath(WebMvcProperties webMvcProperties) {
 			WebMvcProperties.Servlet servletProperties = webMvcProperties.getServlet();
 			return (servletProperties.getPath() != null) ? servletProperties.getPath() : "";

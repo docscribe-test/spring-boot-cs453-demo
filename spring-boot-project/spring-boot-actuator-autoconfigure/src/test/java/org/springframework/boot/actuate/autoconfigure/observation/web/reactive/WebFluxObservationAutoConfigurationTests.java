@@ -68,6 +68,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SuppressWarnings("removal")
 class WebFluxObservationAutoConfigurationTests {
 
+	/**
+	* This is a private final instance of ReactiveWebApplicationContextRunner used for running the context.
+	*/
 	private final ReactiveWebApplicationContextRunner contextRunner = new ReactiveWebApplicationContextRunner()
 			.with(MetricsRun.simple())
 			.withConfiguration(
@@ -269,11 +272,22 @@ class WebFluxObservationAutoConfigurationTests {
 				});
 	}
 
+	/**
+	* This method returns an initialized MeterRegistry.
+	* @param context The AssertableReactiveWebApplicationContext to be used.
+	* @return An instance of MeterRegistry.
+	*/
 	private MeterRegistry getInitializedMeterRegistry(AssertableReactiveWebApplicationContext context)
 			throws Exception {
 		return getInitializedMeterRegistry(context, "/test0", "/test1", "/test2");
 	}
 
+	/**
+	* This method returns an initialized MeterRegistry.
+	* @param context The AssertableReactiveWebApplicationContext to be used.
+	* @param urls The array of URLs for initiating the meter registry.
+	* @return An instance of MeterRegistry.
+	*/
 	private MeterRegistry getInitializedMeterRegistry(AssertableReactiveWebApplicationContext context, String... urls) {
 		assertThat(context).hasSingleBean(ServerHttpObservationFilter.class);
 		WebTestClient client = WebTestClient.bindToApplicationContext(context).build();
@@ -298,6 +312,11 @@ class WebFluxObservationAutoConfigurationTests {
 		return context.getBean(TestObservationRegistry.class);
 	}
 
+	/**
+	* This method creates a WebTestClient for the local port.
+	* @param context The AssertableReactiveWebApplicationContext to be used.
+	* @return An instance of WebTestClient.
+	*/
 	private WebTestClient createWebTestClientForLocalPort(AssertableReactiveWebApplicationContext context) {
 		int port = ((AnnotationConfigReactiveWebServerApplicationContext) context.getSourceApplicationContext())
 				.getWebServer()
@@ -325,6 +344,9 @@ class WebFluxObservationAutoConfigurationTests {
 
 	}
 
+	/**
+	* This class extends DefaultServerRequestObservationConvention. It's a custom convention.
+	*/
 	static class CustomConvention extends DefaultServerRequestObservationConvention {
 
 	}

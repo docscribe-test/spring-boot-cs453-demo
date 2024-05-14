@@ -92,7 +92,13 @@ class WebMvcObservationAutoConfigurationTests {
 
 	@Test
 	void customConventionWhenPresent() {
-		this.contextRunner.withUserConfiguration(CustomConventionConfiguration.class)
+		this.contextRunner.withUserConfiguration(/**
+* Configuration class for /**
+ * Class representing a CustomConvention.
+ */
+ CustomConvention.
+*/
+CustomConventionConfiguration.class)
 				.run((context) -> assertThat(context.getBean(FilterRegistrationBean.class).getFilter())
 						.extracting("observationConvention")
 						.isInstanceOf(CustomConvention.class));
@@ -110,7 +116,10 @@ class WebMvcObservationAutoConfigurationTests {
 
 	@Test
 	void filterRegistrationBacksOffWithAnotherServerHttpObservationFilterRegistration() {
-		this.contextRunner.withUserConfiguration(TestServerHttpObservationFilterRegistrationConfiguration.class)
+		this.contextRunner.withUserConfiguration(/**
+* Configuration class for TestServerHttpObservationFilterRegistration.
+*/
+TestServerHttpObservationFilterRegistrationConfiguration.class)
 				.run((context) -> {
 					assertThat(context).hasSingleBean(FilterRegistrationBean.class);
 					assertThat(context.getBean(FilterRegistrationBean.class))
@@ -120,20 +129,29 @@ class WebMvcObservationAutoConfigurationTests {
 
 	@Test
 	void filterRegistrationBacksOffWithAnotherServerHttpObservationFilter() {
-		this.contextRunner.withUserConfiguration(TestServerHttpObservationFilterConfiguration.class)
+		this.contextRunner.withUserConfiguration(/**
+* Configuration class for TestServerHttpObservationFilter.
+*/
+TestServerHttpObservationFilterConfiguration.class)
 				.run((context) -> assertThat(context).doesNotHaveBean(FilterRegistrationBean.class)
 						.hasSingleBean(ServerHttpObservationFilter.class));
 	}
 
 	@Test
 	void filterRegistrationDoesNotBackOffWithOtherFilterRegistration() {
-		this.contextRunner.withUserConfiguration(TestFilterRegistrationConfiguration.class)
+		this.contextRunner.withUserConfiguration(/**
+* Configuration class for TestFilterRegistration.
+*/
+TestFilterRegistrationConfiguration.class)
 				.run((context) -> assertThat(context).hasBean("testFilter").hasBean("webMvcObservationFilter"));
 	}
 
 	@Test
 	void filterRegistrationDoesNotBackOffWithOtherFilter() {
-		this.contextRunner.withUserConfiguration(TestFilterConfiguration.class)
+		this.contextRunner.withUserConfiguration(/**
+* Configuration class for TestFilter.
+*/
+TestFilterConfiguration.class)
 				.run((context) -> assertThat(context).hasBean("testFilter").hasBean("webMvcObservationFilter"));
 	}
 
@@ -179,7 +197,10 @@ class WebMvcObservationAutoConfigurationTests {
 
 	@Test
 	void whenAnActuatorEndpointIsCalledObservationsShouldBeRecorded() {
-		this.contextRunner.withUserConfiguration(TestController.class, TestObservationRegistryConfiguration.class)
+		this.contextRunner.withUserConfiguration(TestController.class, /**
+ * Configuration class for TestObservationRegistry.
+ */
+ TestObservationRegistryConfiguration.class)
 				.withConfiguration(AutoConfigurations.of(InfoEndpointAutoConfiguration.class, WebMvcAutoConfiguration.class,
 						DispatcherServletAutoConfiguration.class, EndpointAutoConfiguration.class,
 						WebEndpointAutoConfiguration.class, WebMvcEndpointManagementContextConfiguration.class,
