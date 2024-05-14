@@ -81,50 +81,41 @@ public class WebMvcObservationAutoConfiguration {
 		return registration;
 	}
 
-	static class MeterFilterConfiguration {
-
-		MeterFilter metricsHttpServerUriTagFilter(ObservationProperties observationProperties,
-				MetricsProperties metricsProperties) {
-			String name = observationProperties.getHttp().getServer().getRequests().getName();
-			MeterFilter filter = new OnlyOnceLoggingDenyMeterFilter(
-					() -> String.format("Reached the maximum number of URI tags for '%s'.", name));
-			return MeterFilter.maximumAllowableTags(name, "uri", metricsProperties.getWeb().getServer().getMaxUriTags(),
-					filter);
-		}
-
+	public MeterFilter metricsHttpServerUriTagFilter(ObservationProperties observationProperties,
+			MetricsProperties metricsProperties) {
+		String name = observationProperties.getHttp().getServer().getRequests().getName();
+		MeterFilter filter = new OnlyOnceLoggingDenyMeterFilter(
+				() -> String.format("Reached the maximum number of URI tags for '%s'.", name));
+		return MeterFilter.maximumAllowableTags(name, "uri", metricsProperties.getWeb().getServer().getMaxUriTags(),
+				filter);
 	}
 
-	static class ActuatorWebEndpointObservationConfiguration {
+	public ObservationPredicate actuatorWebEndpointObservationPredicate(ServerProperties serverProperties,
+			WebMvcProperties webMvcProperties, PathMappedEndpoints pathMappedEndpoints) {
+		return (name, context) -> {
+			if (context instanceof ServerRequestObservationContext serverContext) {
+				String endpointPath = getEndpointPath(serverProperties, webMvcProperties, pathMappedEndpoints);
+				return !serverContext.getCarrier().getRequestURI().startsWith(endpointPath);
+			}
+			return true;
+		};
+	}
 
-		@Bean
-		ObservationPredicate actuatorWebEndpointObservationPredicate(ServerProperties serverProperties,
-				WebMvcProperties webMvcProperties, PathMappedEndpoints pathMappedEndpoints) {
-			return (name, context) -> {
-				if (context instanceof ServerRequestObservationContext serverContext) {
-					String endpointPath = getEndpointPath(serverProperties, webMvcProperties, pathMappedEndpoints);
-					return !serverContext.getCarrier().getRequestURI().startsWith(endpointPath);
-				}
-				return true;
-			};
-		}
+	private static String getEndpointPath(ServerProperties serverProperties, WebMvcProperties webMvcProperties,
+			PathMappedEndpoints pathMappedEndpoints) {
+		String contextPath = getContextPath(serverProperties);
+		String servletPath = getServletPath(webMvcProperties);
+		return Path.of(contextPath, servletPath, pathMappedEndpoints.getBasePath()).toString();
+	}
 
-		private static String getEndpointPath(ServerProperties serverProperties, WebMvcProperties webMvcProperties,
-				PathMappedEndpoints pathMappedEndpoints) {
-			String contextPath = getContextPath(serverProperties);
-			String servletPath = getServletPath(webMvcProperties);
-			return Path.of(contextPath, servletPath, pathMappedEndpoints.getBasePath()).toString();
-		}
+	private static String getContextPath(ServerProperties serverProperties) {
+		Servlet servlet = serverProperties.getServlet();
+		return (servlet.getContextPath() != null) ? servlet.getContextPath() : "";
+	}
 
-		private static String getContextPath(ServerProperties serverProperties) {
-			Servlet servlet = serverProperties.getServlet();
-			return (servlet.getContextPath() != null) ? servlet.getContextPath() : "";
-		}
-
-		private static String getServletPath(WebMvcProperties webMvcProperties) {
-			WebMvcProperties.Servlet servletProperties = webMvcProperties.getServlet();
-			return (servletProperties.getPath() != null) ? servletProperties.getPath() : "";
-		}
-
+	private static String getServletPath(WebMvcProperties webMvcProperties) {
+		WebMvcProperties.Servlet servletProperties = webMvcProperties.getServlet();
+		return (servletProperties.getPath() != null) ? servletProperties.getPath() : "";
 	}
 
 }

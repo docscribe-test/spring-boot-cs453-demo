@@ -77,43 +77,35 @@ public class WebFluxObservationAutoConfiguration {
 		return new ServerHttpObservationFilter(registry, convention);
 	}
 
-	static class MeterFilterConfiguration {
+	public MeterFilter metricsHttpServerUriTagFilter(MetricsProperties metricsProperties,
+			ObservationProperties observationProperties) {
+		String name = observationProperties.getHttp().getServer().getRequests().getName();
+		MeterFilter filter = new OnlyOnceLoggingDenyMeterFilter(
+				() -> "Reached the maximum number of URI tags for '%s'.".formatted(name));
+		return MeterFilter.maximumAllowableTags(name, "uri", metricsProperties.getWeb().getServer().getMaxUriTags(),
+				filter);
+	}
 
-		MeterFilter metricsHttpServerUriTagFilter(MetricsProperties metricsProperties,
-				ObservationProperties observationProperties) {
-			String name = observationProperties.getHttp().getServer().getRequests().getName();
-			MeterFilter filter = new OnlyOnceLoggingDenyMeterFilter(
-					() -> "Reached the maximum number of URI tags for '%s'.".formatted(name));
-			return MeterFilter.maximumAllowableTags(name, "uri", metricsProperties.getWeb().getServer().getMaxUriTags(),
-					filter);
-		}
+	public ObservationPredicate actuatorWebEndpointObservationPredicate(WebFluxProperties webFluxProperties,
+			PathMappedEndpoints pathMappedEndpoints) {
+		return (name, context) -> {
+			if (context instanceof ServerRequestObservationContext serverContext) {
+				String endpointPath = getEndpointPath(webFluxProperties, pathMappedEndpoints);
+				return !serverContext.getCarrier().getURI().getPath().startsWith(endpointPath);
+			}
+			return true;
+		};
 
 	}
 
-	static class ActuatorWebEndpointObservationConfiguration {
+	private static String getEndpointPath(WebFluxProperties webFluxProperties,
+			PathMappedEndpoints pathMappedEndpoints) {
+		String webFluxBasePath = getWebFluxBasePath(webFluxProperties);
+		return Path.of(webFluxBasePath, pathMappedEndpoints.getBasePath()).toString();
+	}
 
-		ObservationPredicate actuatorWebEndpointObservationPredicate(WebFluxProperties webFluxProperties,
-				PathMappedEndpoints pathMappedEndpoints) {
-			return (name, context) -> {
-				if (context instanceof ServerRequestObservationContext serverContext) {
-					String endpointPath = getEndpointPath(webFluxProperties, pathMappedEndpoints);
-					return !serverContext.getCarrier().getURI().getPath().startsWith(endpointPath);
-				}
-				return true;
-			};
-
-		}
-
-		private static String getEndpointPath(WebFluxProperties webFluxProperties,
-				PathMappedEndpoints pathMappedEndpoints) {
-			String webFluxBasePath = getWebFluxBasePath(webFluxProperties);
-			return Path.of(webFluxBasePath, pathMappedEndpoints.getBasePath()).toString();
-		}
-
-		private static String getWebFluxBasePath(WebFluxProperties webFluxProperties) {
-			return (webFluxProperties.getBasePath() != null) ? webFluxProperties.getBasePath() : "";
-		}
-
+	private static String getWebFluxBasePath(WebFluxProperties webFluxProperties) {
+		return (webFluxProperties.getBasePath() != null) ? webFluxProperties.getBasePath() : "";
 	}
 
 }

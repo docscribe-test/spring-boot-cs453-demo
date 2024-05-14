@@ -64,8 +64,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Madhura Bhave
  * @author Jonatan Ivanov
  */
-@ExtendWith(OutputCaptureExtension.class)
-@SuppressWarnings("removal")
 class WebFluxObservationAutoConfigurationTests {
 
 	private final ReactiveWebApplicationContextRunner contextRunner = new ReactiveWebApplicationContextRunner()
@@ -73,12 +71,10 @@ class WebFluxObservationAutoConfigurationTests {
 			.withConfiguration(
 					AutoConfigurations.of(ObservationAutoConfiguration.class, WebFluxObservationAutoConfiguration.class));
 
-	@Test
 	void shouldProvideWebFluxObservationFilter() {
 		this.contextRunner.run((context) -> assertThat(context).hasSingleBean(ServerHttpObservationFilter.class));
 	}
 
-	@Test
 	void shouldProvideWebFluxObservationFilterOrdered() {
 		this.contextRunner.withBean(FirstWebFilter.class).withBean(ThirdWebFilter.class).run((context) -> {
 			List<WebFilter> webFilters = context.getBeanProvider(WebFilter.class).orderedStream().toList();
@@ -88,7 +84,6 @@ class WebFluxObservationAutoConfigurationTests {
 		});
 	}
 
-	@Test
 	void shouldUseCustomConventionWhenAvailable() {
 		this.contextRunner.withUserConfiguration(CustomConventionConfiguration.class).run((context) -> {
 			assertThat(context).hasSingleBean(ServerHttpObservationFilter.class);
@@ -98,7 +93,6 @@ class WebFluxObservationAutoConfigurationTests {
 		});
 	}
 
-	@Test
 	void afterMaxUrisReachedFurtherUrisAreDenied(CapturedOutput output) {
 		this.contextRunner.withUserConfiguration(TestController.class)
 				.withConfiguration(AutoConfigurations.of(MetricsAutoConfiguration.class, ObservationAutoConfiguration.class,
@@ -111,7 +105,6 @@ class WebFluxObservationAutoConfigurationTests {
 				});
 	}
 
-	@Test
 	void afterMaxUrisReachedFurtherUrisAreDeniedWhenUsingCustomObservationName(CapturedOutput output) {
 		this.contextRunner.withUserConfiguration(TestController.class)
 				.withConfiguration(AutoConfigurations.of(MetricsAutoConfiguration.class, ObservationAutoConfiguration.class,
@@ -125,7 +118,6 @@ class WebFluxObservationAutoConfigurationTests {
 				});
 	}
 
-	@Test
 	void whenAnActuatorEndpointIsCalledObservationsShouldBeRecorded() {
 		this.contextRunner.withUserConfiguration(TestController.class, TestObservationRegistryConfiguration.class)
 				.withConfiguration(AutoConfigurations.of(InfoEndpointAutoConfiguration.class,
@@ -143,7 +135,6 @@ class WebFluxObservationAutoConfigurationTests {
 				});
 	}
 
-	@Test
 	void whenActuatorObservationsEnabledObservationsShouldBeRecorded() {
 		this.contextRunner.withUserConfiguration(TestController.class, TestObservationRegistryConfiguration.class)
 				.withConfiguration(AutoConfigurations.of(InfoEndpointAutoConfiguration.class,
@@ -162,7 +153,6 @@ class WebFluxObservationAutoConfigurationTests {
 				});
 	}
 
-	@Test
 	void whenActuatorObservationsDisabledObservationsShouldNotBeRecorded() {
 		this.contextRunner.withUserConfiguration(TestController.class, TestObservationRegistryConfiguration.class)
 				.withConfiguration(AutoConfigurations.of(InfoEndpointAutoConfiguration.class,
@@ -181,7 +171,6 @@ class WebFluxObservationAutoConfigurationTests {
 				});
 	}
 
-	@Test
 	void whenActuatorObservationsDisabledObservationsShouldNotBeRecordedUsingCustomEndpointBasePath() {
 		this.contextRunner.withUserConfiguration(TestController.class, TestObservationRegistryConfiguration.class)
 				.withConfiguration(AutoConfigurations.of(InfoEndpointAutoConfiguration.class,
@@ -201,11 +190,7 @@ class WebFluxObservationAutoConfigurationTests {
 				});
 	}
 
-	/**
-	 * Due to limitations in {@code WebTestClient}, these tests need to start a real
-	 * webserver and utilize a real http client with a real http request.
-	 */
-	@Test
+
 	void whenActuatorObservationsDisabledObservationsShouldNotBeRecordedUsingCustomWebfluxBasePath() {
 		new ReactiveWebApplicationContextRunner(AnnotationConfigReactiveWebServerApplicationContext::new)
 				.with(MetricsRun.simple())
@@ -232,7 +217,6 @@ class WebFluxObservationAutoConfigurationTests {
 	 * Due to limitations in {@code WebTestClient}, these tests need to start a real
 	 * webserver and utilize a real http client with a real http request.
 	 */
-	@Test
 	void whenActuatorObservationsDisabledObservationsShouldNotBeRecordedUsingCustomWebfluxBasePathAndCustomEndpointBasePath() {
 		new ReactiveWebApplicationContextRunner(AnnotationConfigReactiveWebServerApplicationContext::new)
 				.with(MetricsRun.simple())
@@ -256,7 +240,6 @@ class WebFluxObservationAutoConfigurationTests {
 				});
 	}
 
-	@Test
 	void shouldNotDenyNorLogIfMaxUrisIsNotReached(CapturedOutput output) {
 		this.contextRunner.withUserConfiguration(TestController.class)
 				.withConfiguration(AutoConfigurations.of(MetricsAutoConfiguration.class, ObservationAutoConfiguration.class,
@@ -304,49 +287,4 @@ class WebFluxObservationAutoConfigurationTests {
 				.getPort();
 		return WebTestClient.bindToServer().baseUrl("http://localhost:" + port).build();
 	}
-
-	@Configuration(proxyBeanMethods = false)
-	static class TestObservationRegistryConfiguration {
-
-		@Bean
-		ObservationRegistry observationRegistry() {
-			return TestObservationRegistry.create();
-		}
-
-	}
-
-	@Configuration(proxyBeanMethods = false)
-	static class CustomConventionConfiguration {
-
-		@Bean
-		CustomConvention customConvention() {
-			return new CustomConvention();
-		}
-
-	}
-
-	static class CustomConvention extends DefaultServerRequestObservationConvention {
-
-	}
-
-	@Order(Ordered.HIGHEST_PRECEDENCE)
-	static class FirstWebFilter implements WebFilter {
-
-		@Override
-		public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
-			return chain.filter(exchange);
-		}
-
-	}
-
-	@Order(Ordered.HIGHEST_PRECEDENCE + 2)
-	static class ThirdWebFilter implements WebFilter {
-
-		@Override
-		public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
-			return chain.filter(exchange);
-		}
-
-	}
-
 }

@@ -66,7 +66,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * @author Chanhyeong LEE
  * @author Jonatan Ivanov
  */
-@ExtendWith(OutputCaptureExtension.class)
 class WebMvcObservationAutoConfigurationTests {
 
 	private final WebApplicationContextRunner contextRunner = new WebApplicationContextRunner()
@@ -74,14 +73,12 @@ class WebMvcObservationAutoConfigurationTests {
 			.withConfiguration(AutoConfigurations.of(ObservationAutoConfiguration.class))
 			.withConfiguration(AutoConfigurations.of(WebMvcObservationAutoConfiguration.class));
 
-	@Test
 	void backsOffWhenMeterRegistryIsMissing() {
 		new WebApplicationContextRunner()
 				.withConfiguration(AutoConfigurations.of(WebMvcObservationAutoConfiguration.class))
 				.run((context) -> assertThat(context).doesNotHaveBean(FilterRegistrationBean.class));
 	}
 
-	@Test
 	void definesFilterWhenRegistryIsPresent() {
 		this.contextRunner.run((context) -> {
 			assertThat(context).hasSingleBean(FilterRegistrationBean.class);
@@ -90,7 +87,6 @@ class WebMvcObservationAutoConfigurationTests {
 		});
 	}
 
-	@Test
 	void customConventionWhenPresent() {
 		this.contextRunner.withUserConfiguration(CustomConventionConfiguration.class)
 				.run((context) -> assertThat(context.getBean(FilterRegistrationBean.class).getFilter())
@@ -98,7 +94,6 @@ class WebMvcObservationAutoConfigurationTests {
 						.isInstanceOf(CustomConvention.class));
 	}
 
-	@Test
 	void filterRegistrationHasExpectedDispatcherTypesAndOrder() {
 		this.contextRunner.run((context) -> {
 			FilterRegistrationBean<?> registration = context.getBean(FilterRegistrationBean.class);
@@ -108,7 +103,6 @@ class WebMvcObservationAutoConfigurationTests {
 		});
 	}
 
-	@Test
 	void filterRegistrationBacksOffWithAnotherServerHttpObservationFilterRegistration() {
 		this.contextRunner.withUserConfiguration(TestServerHttpObservationFilterRegistrationConfiguration.class)
 				.run((context) -> {
@@ -118,26 +112,22 @@ class WebMvcObservationAutoConfigurationTests {
 				});
 	}
 
-	@Test
 	void filterRegistrationBacksOffWithAnotherServerHttpObservationFilter() {
 		this.contextRunner.withUserConfiguration(TestServerHttpObservationFilterConfiguration.class)
 				.run((context) -> assertThat(context).doesNotHaveBean(FilterRegistrationBean.class)
 						.hasSingleBean(ServerHttpObservationFilter.class));
 	}
 
-	@Test
 	void filterRegistrationDoesNotBackOffWithOtherFilterRegistration() {
 		this.contextRunner.withUserConfiguration(TestFilterRegistrationConfiguration.class)
 				.run((context) -> assertThat(context).hasBean("testFilter").hasBean("webMvcObservationFilter"));
 	}
 
-	@Test
 	void filterRegistrationDoesNotBackOffWithOtherFilter() {
 		this.contextRunner.withUserConfiguration(TestFilterConfiguration.class)
 				.run((context) -> assertThat(context).hasBean("testFilter").hasBean("webMvcObservationFilter"));
 	}
 
-	@Test
 	void afterMaxUrisReachedFurtherUrisAreDenied(CapturedOutput output) {
 		this.contextRunner.withUserConfiguration(TestController.class)
 				.withConfiguration(AutoConfigurations.of(MetricsAutoConfiguration.class, ObservationAutoConfiguration.class,
@@ -150,7 +140,6 @@ class WebMvcObservationAutoConfigurationTests {
 				});
 	}
 
-	@Test
 	void afterMaxUrisReachedFurtherUrisAreDeniedWhenUsingCustomObservationName(CapturedOutput output) {
 		this.contextRunner.withUserConfiguration(TestController.class)
 				.withConfiguration(AutoConfigurations.of(MetricsAutoConfiguration.class, ObservationAutoConfiguration.class,
@@ -164,7 +153,6 @@ class WebMvcObservationAutoConfigurationTests {
 				});
 	}
 
-	@Test
 	void shouldNotDenyNorLogIfMaxUrisIsNotReached(CapturedOutput output) {
 		this.contextRunner.withUserConfiguration(TestController.class)
 				.withConfiguration(AutoConfigurations.of(MetricsAutoConfiguration.class, ObservationAutoConfiguration.class,
@@ -177,7 +165,6 @@ class WebMvcObservationAutoConfigurationTests {
 				});
 	}
 
-	@Test
 	void whenAnActuatorEndpointIsCalledObservationsShouldBeRecorded() {
 		this.contextRunner.withUserConfiguration(TestController.class, TestObservationRegistryConfiguration.class)
 				.withConfiguration(AutoConfigurations.of(InfoEndpointAutoConfiguration.class, WebMvcAutoConfiguration.class,
@@ -196,7 +183,6 @@ class WebMvcObservationAutoConfigurationTests {
 				});
 	}
 
-	@Test
 	void whenActuatorObservationsEnabledObservationsShouldBeRecorded() {
 		this.contextRunner.withUserConfiguration(TestController.class, TestObservationRegistryConfiguration.class)
 				.withConfiguration(AutoConfigurations.of(InfoEndpointAutoConfiguration.class, WebMvcAutoConfiguration.class,
@@ -216,7 +202,6 @@ class WebMvcObservationAutoConfigurationTests {
 				});
 	}
 
-	@Test
 	void whenActuatorObservationsDisabledObservationsShouldNotBeRecorded() {
 		this.contextRunner.withUserConfiguration(TestController.class, TestObservationRegistryConfiguration.class)
 				.withConfiguration(AutoConfigurations.of(InfoEndpointAutoConfiguration.class, WebMvcAutoConfiguration.class,
@@ -235,7 +220,6 @@ class WebMvcObservationAutoConfigurationTests {
 				});
 	}
 
-	@Test
 	void whenActuatorObservationsDisabledObservationsShouldNotBeRecordedUsingCustomEndpointBasePath() {
 		this.contextRunner.withUserConfiguration(TestController.class, TestObservationRegistryConfiguration.class)
 				.withConfiguration(AutoConfigurations.of(InfoEndpointAutoConfiguration.class, WebMvcAutoConfiguration.class,
@@ -255,7 +239,6 @@ class WebMvcObservationAutoConfigurationTests {
 				});
 	}
 
-	@Test
 	void whenActuatorObservationsDisabledObservationsShouldNotBeRecordedUsingCustomContextPath() {
 		this.contextRunner.withUserConfiguration(TestController.class, TestObservationRegistryConfiguration.class)
 				.withConfiguration(AutoConfigurations.of(InfoEndpointAutoConfiguration.class, WebMvcAutoConfiguration.class,
@@ -275,7 +258,6 @@ class WebMvcObservationAutoConfigurationTests {
 				});
 	}
 
-	@Test
 	void whenActuatorObservationsDisabledObservationsShouldNotBeRecordedUsingCustomServletPath() {
 		this.contextRunner.withUserConfiguration(TestController.class, TestObservationRegistryConfiguration.class)
 				.withConfiguration(AutoConfigurations.of(InfoEndpointAutoConfiguration.class, WebMvcAutoConfiguration.class,
@@ -295,7 +277,6 @@ class WebMvcObservationAutoConfigurationTests {
 				});
 	}
 
-	@Test
 	void whenActuatorObservationsDisabledObservationsShouldNotBeRecordedUsingCustomContextPathAndCustomServletPathAndCustomEndpointBasePath() {
 		this.contextRunner.withUserConfiguration(TestController.class, TestObservationRegistryConfiguration.class)
 				.withConfiguration(AutoConfigurations.of(InfoEndpointAutoConfiguration.class, WebMvcAutoConfiguration.class,
@@ -349,71 +330,4 @@ class WebMvcObservationAutoConfigurationTests {
 		}
 		return context.getBean(TestObservationRegistry.class);
 	}
-
-	@Configuration(proxyBeanMethods = false)
-	static class TestObservationRegistryConfiguration {
-
-		@Bean
-		ObservationRegistry observationRegistry() {
-			return TestObservationRegistry.create();
-		}
-
-	}
-
-	@Configuration(proxyBeanMethods = false)
-	static class TestServerHttpObservationFilterRegistrationConfiguration {
-
-		@Bean
-		@SuppressWarnings("unchecked")
-		FilterRegistrationBean<ServerHttpObservationFilter> testServerHttpObservationFilter() {
-			return mock(FilterRegistrationBean.class);
-		}
-
-	}
-
-	@Configuration(proxyBeanMethods = false)
-	static class TestServerHttpObservationFilterConfiguration {
-
-		@Bean
-		ServerHttpObservationFilter testServerHttpObservationFilter() {
-			return new ServerHttpObservationFilter(TestObservationRegistry.create());
-		}
-
-	}
-
-	@Configuration(proxyBeanMethods = false)
-	static class TestFilterRegistrationConfiguration {
-
-		@Bean
-		@SuppressWarnings("unchecked")
-		FilterRegistrationBean<Filter> testFilter() {
-			return mock(FilterRegistrationBean.class);
-		}
-
-	}
-
-	@Configuration(proxyBeanMethods = false)
-	static class TestFilterConfiguration {
-
-		@Bean
-		Filter testFilter() {
-			return mock(Filter.class);
-		}
-
-	}
-
-	@Configuration(proxyBeanMethods = false)
-	static class CustomConventionConfiguration {
-
-		@Bean
-		CustomConvention customConvention() {
-			return new CustomConvention();
-		}
-
-	}
-
-	static class CustomConvention extends DefaultServerRequestObservationConvention {
-
-	}
-
 }
