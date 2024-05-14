@@ -71,10 +71,16 @@ class WebFluxObservationAutoConfigurationTests {
 			.withConfiguration(
 					AutoConfigurations.of(ObservationAutoConfiguration.class, WebFluxObservationAutoConfiguration.class));
 
+	/**
+	 * Test method to verify that WebFluxObservationFilter is provided.
+	 */
 	void shouldProvideWebFluxObservationFilter() {
 		this.contextRunner.run((context) -> assertThat(context).hasSingleBean(ServerHttpObservationFilter.class));
 	}
 
+	/**
+	 * Test method to verify the order of WebFilters when WebFluxObservationFilter is provided.
+	 */
 	void shouldProvideWebFluxObservationFilterOrdered() {
 		this.contextRunner.withBean(FirstWebFilter.class).withBean(ThirdWebFilter.class).run((context) -> {
 			List<WebFilter> webFilters = context.getBeanProvider(WebFilter.class).orderedStream().toList();
@@ -84,6 +90,9 @@ class WebFluxObservationAutoConfigurationTests {
 		});
 	}
 
+	/**
+	 * Test method to verify the usage of custom convention if available.
+	 */
 	void shouldUseCustomConventionWhenAvailable() {
 		this.contextRunner.withUserConfiguration(CustomConventionConfiguration.class).run((context) -> {
 			assertThat(context).hasSingleBean(ServerHttpObservationFilter.class);
@@ -93,6 +102,10 @@ class WebFluxObservationAutoConfigurationTests {
 		});
 	}
 
+	/**
+	 * Test method to verify the behavior when maximum URIs are reached and further URIs are denied.
+	 * @param output Captured output
+	 */
 	void afterMaxUrisReachedFurtherUrisAreDenied(CapturedOutput output) {
 		this.contextRunner.withUserConfiguration(TestController.class)
 				.withConfiguration(AutoConfigurations.of(MetricsAutoConfiguration.class, ObservationAutoConfiguration.class,
@@ -105,6 +118,10 @@ class WebFluxObservationAutoConfigurationTests {
 				});
 	}
 
+	/**
+	 * Test method to verify the behavior when maximum URIs are reached with a custom observation name.
+	 * @param output Captured output
+	 */
 	void afterMaxUrisReachedFurtherUrisAreDeniedWhenUsingCustomObservationName(CapturedOutput output) {
 		this.contextRunner.withUserConfiguration(TestController.class)
 				.withConfiguration(AutoConfigurations.of(MetricsAutoConfiguration.class, ObservationAutoConfiguration.class,
@@ -118,6 +135,9 @@ class WebFluxObservationAutoConfigurationTests {
 				});
 	}
 
+	/**
+	 * Test method to verify that observations are recorded when an Actuator endpoint is called.
+	 */
 	void whenAnActuatorEndpointIsCalledObservationsShouldBeRecorded() {
 		this.contextRunner.withUserConfiguration(TestController.class, TestObservationRegistryConfiguration.class)
 				.withConfiguration(AutoConfigurations.of(InfoEndpointAutoConfiguration.class,
@@ -135,6 +155,9 @@ class WebFluxObservationAutoConfigurationTests {
 				});
 	}
 
+	/**
+	 * Test method to verify that observations are recorded when Actuator observations are enabled.
+	 */
 	void whenActuatorObservationsEnabledObservationsShouldBeRecorded() {
 		this.contextRunner.withUserConfiguration(TestController.class, TestObservationRegistryConfiguration.class)
 				.withConfiguration(AutoConfigurations.of(InfoEndpointAutoConfiguration.class,
@@ -153,6 +176,9 @@ class WebFluxObservationAutoConfigurationTests {
 				});
 	}
 
+	/**
+	 * Test method to verify that observations are not recorded when Actuator observations are disabled.
+	 */
 	void whenActuatorObservationsDisabledObservationsShouldNotBeRecorded() {
 		this.contextRunner.withUserConfiguration(TestController.class, TestObservationRegistryConfiguration.class)
 				.withConfiguration(AutoConfigurations.of(InfoEndpointAutoConfiguration.class,
@@ -171,6 +197,9 @@ class WebFluxObservationAutoConfigurationTests {
 				});
 	}
 
+	/**
+	 * Test method to verify that observations are not recorded when Actuator observations are disabled with a custom endpoint base path.
+	 */
 	void whenActuatorObservationsDisabledObservationsShouldNotBeRecordedUsingCustomEndpointBasePath() {
 		this.contextRunner.withUserConfiguration(TestController.class, TestObservationRegistryConfiguration.class)
 				.withConfiguration(AutoConfigurations.of(InfoEndpointAutoConfiguration.class,
@@ -191,6 +220,9 @@ class WebFluxObservationAutoConfigurationTests {
 	}
 
 
+	/**
+	 * Test method to verify that observations are not recorded when Actuator observations are disabled with a custom Webflux base path.
+	 */
 	void whenActuatorObservationsDisabledObservationsShouldNotBeRecordedUsingCustomWebfluxBasePath() {
 		new ReactiveWebApplicationContextRunner(AnnotationConfigReactiveWebServerApplicationContext::new)
 				.with(MetricsRun.simple())
@@ -217,6 +249,9 @@ class WebFluxObservationAutoConfigurationTests {
 	 * Due to limitations in {@code WebTestClient}, these tests need to start a real
 	 * webserver and utilize a real http client with a real http request.
 	 */
+	/**
+	 * Test method to verify that observations are not recorded when Actuator observations are disabled with a custom Webflux base path and custom endpoint base path.
+	 */
 	void whenActuatorObservationsDisabledObservationsShouldNotBeRecordedUsingCustomWebfluxBasePathAndCustomEndpointBasePath() {
 		new ReactiveWebApplicationContextRunner(AnnotationConfigReactiveWebServerApplicationContext::new)
 				.with(MetricsRun.simple())
@@ -240,6 +275,10 @@ class WebFluxObservationAutoConfigurationTests {
 				});
 	}
 
+	/**
+	 * Test method to verify that no denial or logging occurs when the maximum URIs are not reached.
+	 * @param output Captured output
+	 */
 	void shouldNotDenyNorLogIfMaxUrisIsNotReached(CapturedOutput output) {
 		this.contextRunner.withUserConfiguration(TestController.class)
 				.withConfiguration(AutoConfigurations.of(MetricsAutoConfiguration.class, ObservationAutoConfiguration.class,
