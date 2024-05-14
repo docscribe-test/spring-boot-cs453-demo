@@ -89,6 +89,14 @@ public class WebMvcObservationAutoConfiguration {
 				filter);
 	}
 
+	/**
+	 * Returns an ObservationPredicate for actuator web endpoint observation.
+	 *
+	 * @param serverProperties The server properties.
+	 * @param webMvcProperties The WebMvc properties.
+	 * @param pathMappedEndpoints The path mapped endpoints.
+	 * @return The ObservationPredicate for actuator web endpoint observation.
+	 */
 	public ObservationPredicate actuatorWebEndpointObservationPredicate(ServerProperties serverProperties, WebMvcProperties webMvcProperties, PathMappedEndpoints pathMappedEndpoints) {
 		return (name, context) -> {
 			if (context instanceof ServerRequestObservationContext serverContext) {
