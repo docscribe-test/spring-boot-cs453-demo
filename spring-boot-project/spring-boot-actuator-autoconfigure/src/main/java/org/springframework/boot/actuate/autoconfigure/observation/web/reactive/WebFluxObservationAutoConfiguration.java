@@ -69,6 +69,12 @@ public class WebFluxObservationAutoConfiguration {
 		this.observationProperties = observationProperties;
 	}
 
+	/**
+	 * Create a ServerHttpObservationFilter bean.
+	 * @param registry The ObservationRegistry instance.
+	 * @param customConvention The custom ServerRequestObservationConvention instance.
+	 * @return The ServerHttpObservationFilter bean.
+	 */
 	public ServerHttpObservationFilter webfluxObservationFilter(ObservationRegistry registry, ObjectProvider customConvention) {
 		String name = this.observationProperties.getHttp().getServer().getRequests().getName();
 		ServerRequestObservationConvention convention = customConvention
@@ -76,6 +82,12 @@ public class WebFluxObservationAutoConfiguration {
 		return new ServerHttpObservationFilter(registry, convention);
 	}
 
+	/**
+	 * Create a MeterFilter for HTTP server URI tags based on metrics and observation properties.
+	 * @param metricsProperties The MetricsProperties instance.
+	 * @param observationProperties The ObservationProperties instance.
+	 * @return The MeterFilter for HTTP server URI tags.
+	 */
 	public MeterFilter metricsHttpServerUriTagFilter(MetricsProperties metricsProperties, ObservationProperties observationProperties) {
 		String name = observationProperties.getHttp().getServer().getRequests().getName();
 		MeterFilter filter = new OnlyOnceLoggingDenyMeterFilter(
@@ -84,6 +96,11 @@ public class WebFluxObservationAutoConfiguration {
 				filter);
 	}
 
+	/**
+	 * Create a MeterFilter for HTTP server URI tags based on metrics properties only.
+	 * @param metricsProperties The MetricsProperties instance.
+	 * @return The MeterFilter for HTTP server URI tags.
+	 */
 	public MeterFilter metricsHttpServerUriTagFilter(MetricsProperties metricsProperties) {
 		String name = observationProperties.getHttp().getServer().getRequests().getName();
 		MeterFilter filter = new OnlyOnceLoggingDenyMeterFilter(
@@ -94,6 +111,12 @@ public class WebFluxObservationAutoConfiguration {
 				filter);
 	}
 
+	/**
+	 * Create an ObservationPredicate for Actuator web endpoint observation based on WebFluxProperties and PathMappedEndpoints.
+	 * @param webFluxProperties The WebFluxProperties instance.
+	 * @param pathMappedEndpoints The PathMappedEndpoints instance.
+	 * @return The ObservationPredicate for Actuator web endpoint observation.
+	 */
 	public ObservationPredicate actuatorWebEndpointObservationPredicate(WebFluxProperties webFluxProperties, PathMappedEndpoints pathMappedEndpoints) {
 		return (name, context) -> {
 			if (context instanceof ServerRequestObservationContext serverContext) {
